@@ -8,7 +8,8 @@ from linebot.exceptions import (
 )
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage, TemplateSendMessage,
-    PostbackTemplateAction, MessageTemplateAction, URITemplateAction, ButtonsTemplate)
+    PostbackTemplateAction, MessageTemplateAction, URITemplateAction, ButtonsTemplate,
+    PostbackEvent)
 
 app = Flask(__name__)
 
@@ -38,6 +39,7 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    print(event)
     button_template_text = "ん？ {} ってどうゆう意味? ".format(event.message.text)
     buttons_template_message = TemplateSendMessage(
         alt_text='Buttons template',
@@ -49,7 +51,6 @@ def handle_message(event):
             actions=[
                 PostbackTemplateAction(
                     label='postback',
-                    text='postback text',
                     data='action=buy&itemid=1'
                 ),
                 MessageTemplateAction(
@@ -68,6 +69,12 @@ def handle_message(event):
         event.reply_token,
         buttons_template_message
     )
+
+@handler.add(PostbackEvent)
+def handle_postback(event):
+    print("postbackevent: {}".format(event))
+    from pprint import pprint
+    pprint(event)
 
 
 if __name__ == "__main__":
