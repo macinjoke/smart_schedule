@@ -80,8 +80,6 @@ def handle_message(event):
 @handler.add(PostbackEvent)
 def handle_postback(event):
     print("postbackevent: {}".format(event))
-    from pprint import pprint
-    pprint(event)
 
 
 if __name__ == "__main__":
