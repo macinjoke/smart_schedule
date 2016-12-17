@@ -39,15 +39,18 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    if not event.message.text.startswith("予定 "):
+        return -1
+
+    schedule_name = event.message.text.split(maxsplit=1)[1]
     print(event)
-    button_template_text = "ん？ {} ってどうゆう意味? ".format(event.message.text)
     buttons_template_message = TemplateSendMessage(
         alt_text='Buttons template',
         template=ButtonsTemplate(
             # 芝刈り機のイラスト
             thumbnail_image_url='https://2.bp.blogspot.com/-SObo8z0Ajyw/V9ppuyMxT2I/AAAAAAAA9xI/jwNeixWhDeMJ6K_z96edB45umM6WTftVQCLcB/s800/kusakari_shibakari.png',
-            title='Menu',
-            text=button_template_text,
+            title="{} の予定".format(schedule_name),
+            text="選択してね",
             actions=[
                 PostbackTemplateAction(
                     label='postback',
