@@ -39,11 +39,11 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    print(event)
     if not event.message.text.startswith("予定 "):
         return -1
 
     schedule_name = event.message.text.split(maxsplit=1)[1]
-    print(event)
     buttons_template_message = TemplateSendMessage(
         alt_text='Buttons template',
         template=ButtonsTemplate(
@@ -53,12 +53,16 @@ def handle_message(event):
             text="選択してね",
             actions=[
                 PostbackTemplateAction(
-                    label='postback',
-                    data='action=buy&itemid=1'
+                    label='参加する',
+                    data='join'
+                ),
+                PostbackTemplateAction(
+                    label='参加しない',
+                    data='nojoin'
                 ),
                 MessageTemplateAction(
-                    label='message',
-                    text='message text'
+                    label='うっひょおお！！！',
+                    text='うっひょおお！！！'
                 ),
                 URITemplateAction(
                     label='uri',
