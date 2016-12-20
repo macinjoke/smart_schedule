@@ -11,10 +11,11 @@ from linebot.models import (
     PostbackTemplateAction, MessageTemplateAction, URITemplateAction, ButtonsTemplate,
     PostbackEvent)
 
+from local_setting.api_keys import (
+    CHANNEL_ACCESS_TOKEN, CHANNEL_SECRET
+)
 app = Flask(__name__)
 
-CHANNEL_ACCESS_TOKEN = "Ntaj7mJX7ND9t/w/oyx2AHswL/Sw2SeQov8nXnuBrHOAm/Z/GprbxZ7/RAzcSNEEYkU3Jqt5o8ded9wvNP+F+sgZFdtV2wos8kcAk9ooV3VdS5V7eg7k1hR68GKNXb2fQ++vvjBqB7S7Tlq2UnFhRQdB04t89/1O/w1cDnyilFU="
-CHANNEL_SECRET = "35bd4afd5d85a5ae77a1d84aa3cfb7ec"
 
 line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
