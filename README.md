@@ -5,13 +5,20 @@ Line bot + Google Calendar で予定を管理
 TODO
 製作途中です
 
+# 環境
+- python3.5.2
+
 # 動かし方手順
+- python3.5.2 をなんらかの方法でいれる
 - リポジトリをクローンする
+- 必要なライブラリをインストールする
 - smart_schedule/local_setting/api_keys.pyを編集する
   -  `CHANNEL_ACCESS_TOKEN = ""` にLineのチャンネルアクセストークンを入れる 
   -  `CHANNEL_SECRET = ""` にLineのチャンネルシークレットを入れる
 - herokuにデプロイする用のブランチを立て、commit, push(デプロイ)する
 ```
+$ cd smart_schedule
+$ pip install -r requirements.txt
 $ git checkout -b deploy/heroku
 $ git commit -am 'add api key'
 $ git push heroku deploy/heroku:master
