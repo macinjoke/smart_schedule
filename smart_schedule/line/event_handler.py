@@ -1,12 +1,11 @@
 
-from linebot import (
-    LineBotApi, WebhookHandler
-)
+from linebot import LineBotApi
 
 from linebot.models import (
-    MessageEvent, TextMessage, TextSendMessage, TemplateSendMessage,
+    MessageEvent, TextMessage, TemplateSendMessage,
     PostbackTemplateAction, MessageTemplateAction, URITemplateAction, ButtonsTemplate,
-    PostbackEvent)
+    PostbackEvent
+)
 
 from smart_schedule.local_setting.api_keys import CHANNEL_ACCESS_TOKEN
 
@@ -50,7 +49,6 @@ def handle(handler, body, signature):
                 ]
             )
         )
-        # text_send_message = TextSendMessage(text=reply_text)
         line_bot_api.reply_message(
             event.reply_token,
             buttons_template_message

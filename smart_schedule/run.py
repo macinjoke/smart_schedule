@@ -1,8 +1,6 @@
 from flask import Flask, request, abort
 
-from linebot import (
-    LineBotApi, WebhookHandler
-)
+from linebot import WebhookHandler
 from linebot.exceptions import (
     InvalidSignatureError
 )
@@ -28,7 +26,6 @@ def callback():
     # handle webhook body
     try:
         event_handler.handle(handler, body, signature)
-        # handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
     return 'OK'
