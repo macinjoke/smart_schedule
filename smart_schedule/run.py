@@ -29,3 +29,6 @@ def callback():
     except InvalidSignatureError:
         abort(400)
     return 'OK'
+
+if __name__ == "__main__":
+    app.run()
