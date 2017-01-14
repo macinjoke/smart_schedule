@@ -1,4 +1,3 @@
-
 from linebot import LineBotApi
 
 from linebot.models import (
@@ -7,9 +6,12 @@ from linebot.models import (
     PostbackEvent
 )
 
-from smart_schedule.local_setting.api_keys import CHANNEL_ACCESS_TOKEN
+import datetime
 
-line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
+from smart_schedule.settings import line_env
+from smart_schedule.google_calendar import api_manager
+
+line_bot_api = LineBotApi(line_env['channel_access_token'])
 
 
 def handle(handler, body, signature):
@@ -57,3 +59,17 @@ def handle(handler, body, signature):
     @handler.add(PostbackEvent)
     def handle_postback(event):
         print("postbackevent: {}".format(event))
+        service = api_manager.build_service()
+
+        now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
+        print('Getting the upcoming 10 events')
+        eventsResult = service.events().list(
+            calendarId='primary', timeMin=now, maxResults=10, singleEvents=True,
+            orderBy='startTime').execute()
+        events = eventsResult.get('items', [])
+
+        if not events:
+            print('No upcoming events found.')
+        for event in events:
+            start = event['start'].get('dateTime', event['start'].get('date'))
+            print(start, event['summary'])
