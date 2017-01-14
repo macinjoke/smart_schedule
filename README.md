@@ -12,18 +12,17 @@ TODO
 - python3.5.2 をなんらかの方法でいれる
 - リポジトリをクローンする
 - 必要なライブラリをインストールする
-- smart_schedule/local_setting/api_keys.pyを編集する
-  -  `CHANNEL_ACCESS_TOKEN = ""` にLineのチャンネルアクセストークンを入れる 
-  -  `CHANNEL_SECRET = ""` にLineのチャンネルシークレットを入れる
-- herokuにデプロイする用のブランチを立て、commit, push(デプロイ)する
+- 各環境で動かす
+  - ローカルでサンプルコードなどを動かす場合
+    - .env.sampleを参考に.env ファイルに環境変数を書き込む 参照 http://qiita.com/hedgehoCrow/items/2fd56ebea463e7fc0f5b#%E7%92%B0%E5%A2%83%E5%A4%89%E6%95%B0%E3%81%AE%E8%A8%98%E5%85%A5%E6%96%B9%E6%B3%95
+  - herokuで動かす場合
+    - herokuのダッシュボード上でAPIKEYのための環境変数を設定する 参照 http://dackdive.hateblo.jp/entry/2016/01/26/121900
+    - herokuにpushする
+
+ライブラリをインストールするコマンド
+
 ```
 $ cd smart_schedule
 $ pip install -r requirements.txt
-$ git checkout -b deploy/heroku
-$ git commit -am 'add api key'
-$ git push heroku deploy/heroku:master
 ```
 
-## 注意
-- APIキーをgithubに公開するわけにはいかないのでデプロイ用のブランチを作る必要がある
-- herokuではmasterブランチを本番環境と見なしているのでpushの際には工夫が必要
