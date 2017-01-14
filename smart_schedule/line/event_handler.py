@@ -8,10 +8,10 @@ from linebot.models import (
 
 import datetime
 
-from smart_schedule.local_setting.api_keys import CHANNEL_ACCESS_TOKEN
+from smart_schedule.settings import line_env
 from smart_schedule.google_calendar import api_manager
 
-line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
+line_bot_api = LineBotApi(line_env['channel_access_token'])
 
 
 def handle(handler, body, signature):

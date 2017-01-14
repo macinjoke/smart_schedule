@@ -5,13 +5,13 @@ from linebot.exceptions import (
     InvalidSignatureError
 )
 
-from smart_schedule.local_setting.api_keys import CHANNEL_SECRET
+from smart_schedule.settings import line_env
 
 from smart_schedule.line import event_handler
 
 app = Flask(__name__)
 
-handler = WebhookHandler(CHANNEL_SECRET)
+handler = WebhookHandler(line_env['channel_secret'])
 
 
 @app.route("/callback", methods=['POST'])
