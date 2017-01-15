@@ -2,21 +2,20 @@
 
 from datetime import datetime
 
-from flask import Flask, request, abort
+from flask import Flask
 from linebot import (
-    LineBotApi, WebhookHandler
+    LineBotApi
 )
 from linebot.exceptions import (
-    InvalidSignatureError,LineBotApiError
+    LineBotApiError
 )
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage, TemplateSendMessage,
     PostbackEvent,StickerSendMessage)
 
-from smart_schedule.line.parts.module import (
+from smart_schedule.line.module import (
 exit_confirm, post_carousel, buttons
 )
-
 from smart_schedule.settings import line_env
 
 app = Flask(__name__)
