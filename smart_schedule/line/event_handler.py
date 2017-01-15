@@ -115,9 +115,13 @@ def handle(handler, body, signature):
         if(compare.total_seconds() < 20):
             if data[0]=="yes" and event.source.type=="group":
                 try:
-                    line_bot_api.leave_room(event.source.group_id)
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        StickerSendMessage(package_id="2", sticker_id="42")
+                    )
+                    line_bot_api.leave_group(event.source.group_id)
                 except LineBotApiError as e:
-                    print("eroor")
+                    print(e)
             elif data[0]=="yes" and event.source.type=="room":
                 print("OK")
                 try:
@@ -127,7 +131,7 @@ def handle(handler, body, signature):
                     )
                     line_bot_api.leave_room(event.source.room_id)
                 except LineBotApiError as e:
-                    print("eroor")
+                    print(e)
             elif data[0]=="no":
                 line_bot_api.reply_message(
                     event.reply_token,
