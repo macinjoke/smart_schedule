@@ -59,7 +59,11 @@ def handle(handler, body, signature):
     @handler.add(PostbackEvent)
     def handle_postback(event):
         print("postbackevent: {}".format(event))
-        service = api_manager.build_service()
+        credentials = api_manager.get_credentials()
+        if credentials is False:
+            print("Google Calendarの認証をしてね")
+            return
+        service = api_manager.build_service(credentials)
 
         now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
         print('Getting the upcoming 10 events')
