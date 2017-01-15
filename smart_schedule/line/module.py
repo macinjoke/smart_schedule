@@ -26,7 +26,7 @@ def exit_confirm(time):
     )
 
 
-def buttons(schedule_name, time):
+def get_join_contents_buttons(schedule_name, time):
     return ButtonsTemplate(
         # 芝刈り機のイラスト
         thumbnail_image_url='https://2.bp.blogspot.com/-SObo8z0Ajyw/V9ppuyMxT2I/AAAAAAAA9xI/jwNeixWhDeMJ6K_z96edB45umM6WTftVQCLcB/s800/kusakari_shibakari.png',
@@ -59,65 +59,66 @@ def post_carousel(reply_token):
         "Authorization": 'Bearer ' + line_env['channel_access_token']
     }
     payload = {
-          "replyToken":reply_token,
-          "messages":[
-              {
+        "replyToken": reply_token,
+        "messages": [
+            {
                 "type": "template",
                 "altText": "Carousel template",
                 "template": {
                     "type": "carousel",
-                    "columns": [
+                    "columns":
+                        [
+                            {
+                                # "thumbnailImageUrl": "https://2.bp.blogspot.com/-SObo8z0Ajyw/V9ppuyMxT2I/AAAAAAAA9xI/jwNeixWhDeMJ6K_z96edB45umM6WTftVQCLcB/s800/kusakari_shibakari.png",
+                                "title": "自分の予定を見る",
+                                "text": "選択してください",
+                                "actions":
+                                    [
 
-                        {
-                          # "thumbnailImageUrl": "https://2.bp.blogspot.com/-SObo8z0Ajyw/V9ppuyMxT2I/AAAAAAAA9xI/jwNeixWhDeMJ6K_z96edB45umM6WTftVQCLcB/s800/kusakari_shibakari.png",
-                          "title": "自分の予定を見る",
-                          "text": "選択してください",
-                          "actions": [
+                                        {
+                                            "type": "postback",
+                                            "label": "キーワード検索",
+                                            "data": "#keyword_search,{}".format(time)
+                                        },
+                                        {
+                                            "type": "postback",
+                                            "label": "n日後の予定を表示",
+                                            "data": "#after n days_schedule,{}".format(time)
+                                        },
+                                        {
+                                            "type": "postback",
+                                            "label": "n日後までの予定を表示",
+                                            "data": "#up to n days_schedule,{}".format(time)
+                                        },
+                                    ]
+                            },
+                            {
+                                # "thumbnailImageUrl": "https://2.bp.blogspot.com/-SObo8z0Ajyw/V9ppuyMxT2I/AAAAAAAA9xI/jwNeixWhDeMJ6K_z96edB45umM6WTftVQCLcB/s800/kusakari_shibakari.png",
+                                "title": "予定を追加する",
+                                "text": "選択してください",
+                                "actions": [
 
-                              {
-                                  "type": "postback",
-                                  "label": "キーワード検索",
-                                  "data": "#keyword_search,{}".format(time)
-                              },
-                              {
-                                  "type": "postback",
-                                  "label": "n日後の予定を表示",
-                                  "data": "#after n days_schedule,{}".format(time)
-                              },
-                              {
-                                  "type": "postback",
-                                  "label": "n日後までの予定を表示",
-                                  "data": "#up to n days_schedule,{}".format(time)
-                              },
-                          ]
-                        },
-                        {
-                          # "thumbnailImageUrl": "https://2.bp.blogspot.com/-SObo8z0Ajyw/V9ppuyMxT2I/AAAAAAAA9xI/jwNeixWhDeMJ6K_z96edB45umM6WTftVQCLcB/s800/kusakari_shibakari.png",
-                          "title": "予定を追加する",
-                          "text": "選択してください",
-                          "actions": [
+                                    {
+                                        "type": "uri",
+                                        "label": "詳細を見る",
+                                        "uri": "http://example.com"
+                                    },
+                                    {
+                                        "type": "uri",
+                                        "label": "詳細を見る",
+                                        "uri": "http://example.com"
+                                    },
+                                    {
+                                        "type": "uri",
+                                        "label": "詳細を見る",
+                                        "uri": "http://example.com"
+                                    },
+                                ]
+                            },
 
-                              {
-                                  "type": "uri",
-                                  "label": "詳細を見る",
-                                  "uri": "http://example.com"
-                              },
-                              {
-                                  "type": "uri",
-                                  "label": "詳細を見る",
-                                  "uri": "http://example.com"
-                              },
-                              {
-                                  "type": "uri",
-                                  "label": "詳細を見る",
-                                  "uri": "http://example.com"
-                              },
-                          ]
-                        },
-
-                    ]
+                        ]
                 }
-              }
-            ]
+            }
+        ]
     }
     requests.post('https://api.line.me/v2/bot/message/reply', headers=header, data=json.dumps(payload))

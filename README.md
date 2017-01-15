@@ -24,5 +24,20 @@ TODO
 ```
 $ cd smart_schedule
 $ pip install -r requirements.txt
-```
+```  
 
+# DBをmigrateする手順
+以下のコマンドで動作することを確認する  
+
+```
+$ heroku run bash
+Running bash on ⬢ {app_name}... up, run.2491 (Free)
+~ $ python manage.py
+```
+これが確認できたら、```heroku run bash```した状態で以下のコマンドを実行する  
+
+```
+~ $ python manage.py db init
+~ $ python manage.py db migrate
+~ $ python manage.py db upgrade
+```

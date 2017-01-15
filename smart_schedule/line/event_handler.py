@@ -14,7 +14,7 @@ from linebot.models import (
     PostbackEvent,StickerSendMessage)
 
 from smart_schedule.line.module import (
-exit_confirm, post_carousel, buttons
+exit_confirm, post_carousel, get_join_contents_buttons
 )
 from smart_schedule.settings import line_env
 
@@ -22,7 +22,7 @@ app = Flask(__name__)
 
 line_bot_api = LineBotApi(line_env['channel_access_token'])
 
-flag = False
+keyword_flag = False
 
 day_flag = False
 up_day_flag = False
@@ -36,7 +36,7 @@ def handle(handler, body, signature):
         time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         global up_day_flag
         global day_flag
-        global flag
+        global keyword_flag
 
         if day_flag:
             day_flag = False
@@ -56,8 +56,8 @@ def handle(handler, body, signature):
             )
             return -1
 
-        if flag:
-            flag = False
+        if keyword_flag:
+            keyword_flag = False
             reply_text="キーワードは、{}".format(event.message.text)
             # keyword = event.message.text.split('、')
             line_bot_api.reply_message(
@@ -93,7 +93,7 @@ def handle(handler, body, signature):
         schedule_name = event.message.text.split(maxsplit=1)[1]
         buttons_template_message = TemplateSendMessage(
             alt_text='Buttons template',
-            template=buttons(schedule_name, time)
+            template=get_join_contents_buttons(schedule_name, time)
         )
         print(buttons_template_message)
         # text_send_message = TextSendMessage(text=reply_text)
