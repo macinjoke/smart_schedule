@@ -30,7 +30,7 @@ up_day_flag = False
 def handle(handler, body, signature):
     handler.handle(body, signature)
 
-    @handler.add(MessageEvent, message=TextMessage)
+    @handler.add(MessageEvent, message = TextMessage)
     def handle_message(event):
         print(event)
         time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -43,7 +43,7 @@ def handle(handler, body, signature):
             reply_text = "{}日後の予定を表示します".format(event.message.text)
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text=reply_text)
+                TextSendMessage(text = reply_text)
             )
             return -1
 
@@ -52,7 +52,7 @@ def handle(handler, body, signature):
             reply_text = "{}日後までの予定を表示します".format(event.message.text)
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text=reply_text)
+                TextSendMessage(text = reply_text)
             )
             return -1
 
@@ -62,10 +62,10 @@ def handle(handler, body, signature):
             # keyword = event.message.text.split('、')
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text=reply_text)
+                TextSendMessage(text = reply_text)
             )
             return -1
-        if event.message.text=="#menu":
+        if event.message.text == "#menu":
             post_carousel(event.reply_token)
             return -1
         if not event.message.text.startswith("予定 "):
@@ -73,8 +73,8 @@ def handle(handler, body, signature):
                 reply_text = "大好きだよ！！！".format(event.message.text)
             elif event.message.text.startswith("退出") and not event.source.type=="user":
                 confirm_message = TemplateSendMessage(
-                    alt_text='Confirm template',
-                    template=exit_confirm(time)
+                    alt_text = 'Confirm template',
+                    template = exit_confirm(time)
                 )
                 line_bot_api.reply_message(
                     event.reply_token,
@@ -82,18 +82,18 @@ def handle(handler, body, signature):
                 )
                 return -1
             else:
-                reply_text=event.message.text
+                reply_text = event.message.text
 
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text=reply_text)
+                TextSendMessage(text = reply_text)
             )
             return -1
 
-        schedule_name = event.message.text.split(maxsplit=1)[1]
+        schedule_name = event.message.text.split(maxsplit = 1)[1]
         buttons_template_message = TemplateSendMessage(
-            alt_text='Buttons template',
-            template=get_join_contents_buttons(schedule_name, time)
+            alt_text = 'Buttons template',
+            template = get_join_contents_buttons(schedule_name, time)
         )
         print(buttons_template_message)
         # text_send_message = TextSendMessage(text=reply_text)
@@ -112,63 +112,63 @@ def handle(handler, body, signature):
         compare = datetime.now()-pre_time
         print(compare)
         if(compare.total_seconds() < 20):
-            if data[0]=="yes" and event.source.type=="group":
+            if data[0] == "yes" and event.source.type == "group":
                 try:
                     line_bot_api.reply_message(
                         event.reply_token,
-                        StickerSendMessage(package_id="2", sticker_id="42")
+                        StickerSendMessage(package_id = "2", sticker_id = "42")
                     )
                     line_bot_api.leave_group(event.source.group_id)
                 except LineBotApiError as e:
                     print(e)
-            elif data[0]=="yes" and event.source.type=="room":
+            elif data[0] == "yes" and event.source.type == "room":
                 print("OK")
                 try:
                     line_bot_api.reply_message(
                         event.reply_token,
-                        StickerSendMessage(package_id="2" ,sticker_id="42")
+                        StickerSendMessage(package_id = "2" ,sticker_id = "42")
                     )
                     line_bot_api.leave_room(event.source.room_id)
                 except LineBotApiError as e:
                     print(e)
-            elif data[0]=="no":
+            elif data[0] == "no":
                 line_bot_api.reply_message(
                     event.reply_token,
-                    TextSendMessage(text="退出をキャンセルします。")
+                    TextSendMessage(text = "退出をキャンセルします。")
                 )
-            elif data[0]=="#keyword_search":
+            elif data[0] == "#keyword_search":
                 global flag
                 flag = True
                 line_bot_api.reply_message(
                     event.reply_token,
-                    TextSendMessage(text="キーワードを入力してください\n例：バイト、研究室")
+                    TextSendMessage(text = "キーワードを入力してください\n例：バイト、研究室")
                 )
-            elif data[0]=="#after n days_schedule":
+            elif data[0] == "#after n days_schedule":
                 global day_flag
-                day_flag=True
+                day_flag = True
                 line_bot_api.reply_message(
                     event.reply_token,
                     [
-                        TextSendMessage(text="n日後の予定を表示します"),
-                        TextSendMessage(text="何日後の予定を表示しますか？\n例：5")
+                        TextSendMessage(text = "n日後の予定を表示します"),
+                        TextSendMessage(text = "何日後の予定を表示しますか？\n例：5")
                     ]
                 )
-            elif data[0]=="#up to n days_schedule":
+            elif data[0] == "#up to n days_schedule":
                 global up_day_flag
-                up_day_flag=True
+                up_day_flag = True
                 line_bot_api.reply_message(
                     event.reply_token,
                     [
                         TextSendMessage(
-                            text="n日後までの予定を表示します"
+                            text = "n日後までの予定を表示します"
                         ),
                         TextSendMessage(
-                            text="何日後までの予定を表示しますか？\n例：5"
+                            text = "何日後までの予定を表示しますか？\n例：5"
                         )
                     ]
                 )
         else:
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text="タイムアウトです。\nもう一度メニューを開いてからアクションを実行してください")
+                TextSendMessage(text = "タイムアウトです。\nもう一度最初からやり直してください")
             )
