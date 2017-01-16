@@ -15,8 +15,6 @@ def get_credentials(user_id):
     session = sessionmaker(bind=engine, autocommit=True)()
     with session.begin():
         personals = session.query(Personal).filter(Personal.user_id == user_id)
-    print('personals')
-    print(personals)
     try:
         credentials = client.OAuth2Credentials.from_json(personals[0].credential)
         if credentials.access_token_expired:
