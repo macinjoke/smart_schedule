@@ -2,13 +2,19 @@ from oauth2client import client
 import flask
 import httplib2
 from apiclient import discovery
+import datetime
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from smart_schedule.models import Personal
 
 
-def get_credentials():
-    if 'credentials' not in flask.session:
-        return False
-    # TODO 本当はセッションではなくDBから読み込む
-    credentials = client.OAuth2Credentials.from_json(flask.session['credentials'])
+def get_credentials(user_id):
+    engine = create_engine('postgresql://makinoshunni@localhost:5432/smart_schedule', echo=True)
+    session = sessionmaker(bind=engine, autocommit=True)()
+    with session.begin():
+        personal = session.query(Personal).filter(Personal.user_id == user_id)
+    credentials = client.OAuth2Credentials.from_json(personal.credential)
     if credentials.access_token_expired:
         return False
     else:

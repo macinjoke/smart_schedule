@@ -8,11 +8,14 @@ from linebot import WebhookHandler
 from linebot.exceptions import (
     InvalidSignatureError
 )
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from smart_schedule.settings import line_env
 from smart_schedule.settings import APP_ROOT
 from smart_schedule.line import event_handler
 from smart_schedule.google_calendar import api_manager
+from smart_schedule.models import Personal
 
 app = Flask(__name__)
 app.secret_key = str(uuid.uuid4())
@@ -39,7 +42,8 @@ def callback():
 
 @app.route('/')
 def index():
-    credentials = api_manager.get_credentials()
+    # TODO hoge
+    credentials = api_manager.get_credentials("hoge")
     if credentials is False:
         return flask.redirect(flask.url_for('oauth2callback'))
     response = '認証が完了しました。Smart Schedule でGoogle Calendarにアクセスできます。'
@@ -59,6 +63,9 @@ def oauth2callback():
     else:
         auth_code = flask.request.args.get('code')
         credentials = flow.step2_exchange(auth_code)
-        # TODO 本当はセッションではなくDBに入れる
-        flask.session['credentials'] = credentials.to_json()
+        engine = create_engine('postgresql://makinoshunni@localhost:5432/smart_schedule', echo=True)
+        session = sessionmaker(bind=engine, autocommit=True)()
+        with session.begin():
+            # TODO hoge
+            session.add(Personal(user_id='hoge', credential=credentials.to_json()))
         return flask.redirect(flask.url_for('index'))
