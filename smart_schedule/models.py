@@ -7,6 +7,7 @@ from datetime import datetime
 
 db = SQLAlchemy()
 
+
 class Personal(db.Model):
     """
     個人情報格納のモデル
@@ -19,7 +20,7 @@ class Personal(db.Model):
     day_flag = Column(Boolean)
     keyword_flag = Column(Boolean)
 
-    #生成された時に呼び出される
+    # 生成された時に呼び出される
     def __init__(self, user_id, credential):
         self.user_id = user_id.title()
         self.credential = credential.title()
