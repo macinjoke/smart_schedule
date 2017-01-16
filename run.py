@@ -12,6 +12,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from smart_schedule.settings import line_env
+from smart_schedule.settings import db_env
 from smart_schedule.settings import APP_ROOT
 from smart_schedule.line import event_handler
 from smart_schedule.google_calendar import api_manager
@@ -42,12 +43,11 @@ def callback():
 
 @app.route('/')
 def index():
-    # TODO hoge
+    # TODO about user_id
     credentials = api_manager.get_credentials("hoge")
     if credentials is False:
         return flask.redirect(flask.url_for('oauth2callback'))
     response = '認証が完了しました。Smart Schedule でGoogle Calendarにアクセスできます。'
-
     return response
 
 
@@ -63,9 +63,9 @@ def oauth2callback():
     else:
         auth_code = flask.request.args.get('code')
         credentials = flow.step2_exchange(auth_code)
-        engine = create_engine('postgresql://makinoshunni@localhost:5432/smart_schedule', echo=True)
+        engine = create_engine(db_env['database_url'], echo=True)
         session = sessionmaker(bind=engine, autocommit=True)()
         with session.begin():
-            # TODO hoge
+            # TODO about user_id
             session.add(Personal(user_id='hoge', credential=credentials.to_json()))
         return flask.redirect(flask.url_for('index'))

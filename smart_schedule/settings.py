@@ -12,3 +12,7 @@ line_env = {
     'channel_access_token': os.environ.get('CHANNEL_ACCESS_TOKEN'),
     'channel_secret': os.environ.get('CHANNEL_SECRET')
 }
+
+db_env = {
+    'database_url': os.environ.get('DATABASE_URL')
+}
