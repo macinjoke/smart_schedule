@@ -22,8 +22,8 @@ class Personal(db.Model):
 
     # 生成された時に呼び出される
     def __init__(self, user_id, credential):
-        self.user_id = user_id.title()
-        self.credential = credential.title()
+        self.user_id = user_id
+        self.credential = credential
         self.up_to_day_flag = False
         self.day_flag = False
         self.keyword_flag = False
