@@ -1,5 +1,9 @@
+alembic==0.8.9
 click==6.6
 Flask==0.11.1
+Flask-Migrate==2.0.2
+Flask-Script==2.0.5
+Flask-SQLAlchemy==2.1
 future==0.16.0
 google-api-python-client==1.5.5
 gunicorn==19.6.0
@@ -7,13 +11,17 @@ httplib2==0.9.2
 itsdangerous==0.24
 Jinja2==2.8
 line-bot-sdk==1.0.2
+Mako==1.0.6
 MarkupSafe==0.23
 oauth2client==4.0.0
+psycopg2==2.6.2
 pyasn1==0.1.9
 pyasn1-modules==0.0.8
 python-dotenv==0.6.2
+python-editor==1.0.3
 requests==2.12.3
 rsa==3.4.2
 six==1.10.0
+SQLAlchemy==1.1.4
 uritemplate==3.0.0
 Werkzeug==0.11.11
