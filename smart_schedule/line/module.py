@@ -10,17 +10,18 @@ from linebot.models import (
 
 from smart_schedule.settings import line_env
 
+
 def exit_confirm(time):
     return ConfirmTemplate(
-        text = "本当に退出させますか？",
-        actions = [
+        text="本当に退出させますか？",
+        actions=[
             PostbackTemplateAction(
-                label = 'Yes',
-                data = 'yes,{}'.format(time)
+                label='Yes',
+                data='yes,{}'.format(time)
             ),
             PostbackTemplateAction(
-                label = 'No',
-                data = 'no,{}'.format(time)
+                label='No',
+                data='no,{}'.format(time)
             )
         ]
     )
@@ -29,28 +30,29 @@ def exit_confirm(time):
 def get_join_contents_buttons(schedule_name, time):
     return ButtonsTemplate(
         # 芝刈り機のイラスト
-        thumbnail_image_url = 'https://2.bp.blogspot.com/-SObo8z0Ajyw/V9ppuyMxT2I/AAAAAAAA9xI/jwNeixWhDeMJ6K_z96edB45umM6WTftVQCLcB/s800/kusakari_shibakari.png',
-        title = "{} の予定".format(schedule_name),
-        text = "選択してね",
+        thumbnail_image_url='https://2.bp.blogspot.com/-SObo8z0Ajyw/V9ppuyMxT2I/AAAAAAAA9xI/jwNeixWhDeMJ6K_z96edB45umM6WTftVQCLcB/s800/kusakari_shibakari.png',
+        title="{} の予定".format(schedule_name),
+        text="選択してね",
         actions=[
             PostbackTemplateAction(
-                label = '参加する',
-                data = 'join,{}'.format(time)
+                label='参加する',
+                data='join,{}'.format(time)
             ),
             PostbackTemplateAction(
-                label = '参加しない',
-                data = 'nojoin,{}'.format(time)
+                label='参加しない',
+                data='nojoin,{}'.format(time)
             ),
             MessageTemplateAction(
-                label = 'うっひょおお！！！',
-                text = 'うっひょおお！！！'
+                label='うっひょおお！！！',
+                text='うっひょおお！！！'
             ),
             URITemplateAction(
-                label = 'uri',
-                uri = 'http://example.com/'
+                label='uri',
+                uri='http://example.com/'
             )
         ]
     )
+
 
 def post_carousel(reply_token):
     time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -119,4 +121,4 @@ def post_carousel(reply_token):
             }
         ]
     }
-    requests.post('https://api.line.me/v2/bot/message/reply', headers = header, data = json.dumps(payload))
+    requests.post('https://api.line.me/v2/bot/message/reply', headers=header, data=json.dumps(payload))
