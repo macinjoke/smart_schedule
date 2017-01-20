@@ -32,10 +32,10 @@ def build_service(credentials):
 
 # 現在からn日分のイベントを取得
 def get_n_days_events(service, n):
-    now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
+    now = datetime.datetime.utcnow()
     period = datetime.timedelta(days=n)
     eventsResult = service.events().list(
-        calendarId='primary', timeMin=now, timeMax=now + period, maxResults=100, singleEvents=True,
+        calendarId='primary', timeMin=now.isoformat() + 'Z', timeMax=(now + period).isoformat() + 'Z', maxResults=100, singleEvents=True,
         orderBy='startTime').execute()
     events = eventsResult.get('items', [])
     return events
@@ -43,10 +43,11 @@ def get_n_days_events(service, n):
 
 # n日後のイベントを取得
 def get_events_after_n_days(service, n):
-    now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
+    now = datetime.datetime.utcnow()
     days = datetime.timedelta(days=n)
     eventsResult = service.events().list(
-        calendarId='primary', timeMin=now + days, timeMax=now + days + datetime.timedelta(days=1),
+        calendarId='primary', timeMin=(now + days).isoformat() + 'Z',
+        timeMax=(now + days + datetime.timedelta(days=1)).isoformat() + 'Z',
         maxResults=100, singleEvents=True, orderBy='startTime').execute()
     events = eventsResult.get('items', [])
     return events
@@ -54,9 +55,9 @@ def get_events_after_n_days(service, n):
 
 # タイトル名で検索
 def get_events_by_title(service, search_word):
-    now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
+    now = datetime.datetime.utcnow()
     eventsResult = service.events().list(
-        calendarId='primary', timeMin=now, maxResults=100,
+        calendarId='primary', timeMin=now.isoformat() + 'Z', maxResults=100,
         singleEvents=True, orderBy='startTime').execute()
     events = eventsResult.get('items', [])
     events = list(filter(lambda event: search_word in event['summary'], events))
