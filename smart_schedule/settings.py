@@ -10,7 +10,8 @@ if os.path.exists(dotenv_path):
 
 line_env = {
     'channel_access_token': os.environ.get('CHANNEL_ACCESS_TOKEN'),
-    'channel_secret': os.environ.get('CHANNEL_SECRET')
+    'channel_secret': os.environ.get('CHANNEL_SECRET'),
+    'user_id': os.environ.get("LINE_USER_ID")
 }
 
 db_env = {
