@@ -14,9 +14,10 @@ from linebot.models import (
     PostbackEvent,StickerSendMessage)
 
 from smart_schedule.line.module import (
-exit_confirm, post_carousel, get_join_contents_buttons
+    exit_confirm, post_carousel, get_join_contents_buttons
 )
 from smart_schedule.settings import line_env
+from smart_schedule.google_calendar import api_manager
 
 app = Flask(__name__)
 
@@ -41,7 +42,20 @@ def handle(handler, body, signature):
 
         if day_flag:
             day_flag = False
-            reply_text = "{}日後の予定を表示します".format(event.message.text)
+            credentials = api_manager.get_credentials(line_env['user_id'])
+            service = api_manager.build_service(credentials)
+            days = int(event.message.text)
+            events = api_manager.get_events_after_n_days(service, days)
+            reply_text = '{}日後の予定'.format(days)
+            for e in events:
+                summary = e['summary']
+                start = e['start'].get('dateTime', e['start'].get('date'))
+                start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
+                start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
+                end = e['end'].get('dateTime', e['end'].get('date'))
+                end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
+                end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
+                reply_text += '\n{}\n{}\n|\n{}\n'.format(summary, start, end)
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=reply_text)
@@ -50,7 +64,20 @@ def handle(handler, body, signature):
 
         if up_day_flag:
             up_day_flag = False
-            reply_text = "{}日後までの予定を表示します".format(event.message.text)
+            credentials = api_manager.get_credentials(line_env['user_id'])
+            service = api_manager.build_service(credentials)
+            days = int(event.message.text)
+            events = api_manager.get_n_days_events(service, days)
+            reply_text = '{}日後までの予定'.format(days)
+            for e in events:
+                summary = e['summary']
+                start = e['start'].get('dateTime', e['start'].get('date'))
+                start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
+                start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
+                end = e['end'].get('dateTime', e['end'].get('date'))
+                end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
+                end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
+                reply_text += '\n{}\n{}\n|\n{}\n'.format(summary, start, end)
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=reply_text)
@@ -59,8 +86,20 @@ def handle(handler, body, signature):
 
         if keyword_flag:
             keyword_flag = False
-            reply_text = "キーワードは、{}".format(event.message.text)
-            # keyword = event.message.text.split('、')
+            credentials = api_manager.get_credentials(line_env['user_id'])
+            service = api_manager.build_service(credentials)
+            keyword = event.message.text
+            events = api_manager.get_events_by_title(service, keyword)
+            reply_text = '{}の検索結果'.format(keyword)
+            for e in events:
+                summary = e['summary']
+                start = e['start'].get('dateTime', e['start'].get('date'))
+                start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
+                start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
+                end = e['end'].get('dateTime', e['end'].get('date'))
+                end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
+                end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
+                reply_text += '\n{}\n{}\n|\n{}\n'.format(summary, start, end)
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=reply_text)
@@ -138,8 +177,8 @@ def handle(handler, body, signature):
                     TextSendMessage(text="退出をキャンセルします。")
                 )
             elif data[0] == "#keyword_search":
-                global flag
-                flag = True
+                global keyword_flag
+                keyword_flag = True
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text="キーワードを入力してください\n例：バイト、研究室")
@@ -159,14 +198,7 @@ def handle(handler, body, signature):
                 up_day_flag = True
                 line_bot_api.reply_message(
                     event.reply_token,
-                    [
-                        TextSendMessage(
-                            text="n日後までの予定を表示します"
-                        ),
-                        TextSendMessage(
-                            text="何日後までの予定を表示しますか？\n例：5"
-                        )
-                    ]
+                    TextSendMessage(text="何日後までの予定を表示しますか？\n例：5")
                 )
         else:
             line_bot_api.reply_message(

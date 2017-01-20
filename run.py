@@ -44,7 +44,7 @@ def callback():
 @app.route('/')
 def index():
     # TODO about user_id
-    credentials = api_manager.get_credentials("hoge")
+    credentials = api_manager.get_credentials(line_env['user_id'])
     if credentials is False:
         return flask.redirect(flask.url_for('oauth2callback'))
     response = '認証が完了しました。Smart Schedule でGoogle Calendarにアクセスできます。'
@@ -67,5 +67,5 @@ def oauth2callback():
         session = sessionmaker(bind=engine, autocommit=True)()
         with session.begin():
             # TODO about user_id
-            session.add(Personal(user_id='hoge', credential=credentials.to_json()))
+            session.add(Personal(user_id=line_env['user_id'], credential=credentials.to_json()))
         return flask.redirect(flask.url_for('index'))
