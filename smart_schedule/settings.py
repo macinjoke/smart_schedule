@@ -17,3 +17,11 @@ line_env = {
 db_env = {
     'database_url': os.environ.get('DATABASE_URL')
 }
+
+web_env = {
+    'host': os.environ.get('WEB_SERVER_HOST')
+}
+
+hash_env = {
+    'seed': os.environ.get('HASH_SEED')
+}

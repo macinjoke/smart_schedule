@@ -3,6 +3,7 @@ import flask
 from oauth2client import client
 import os
 import uuid
+import hashlib
 
 from linebot import WebhookHandler
 from linebot.exceptions import (
@@ -13,13 +14,14 @@ from sqlalchemy.orm import sessionmaker
 
 from smart_schedule.settings import line_env
 from smart_schedule.settings import db_env
+from smart_schedule.settings import hash_env
 from smart_schedule.settings import APP_ROOT
 from smart_schedule.line import event_handler
-from smart_schedule.google_calendar import api_manager
 from smart_schedule.models import Personal
 
 app = Flask(__name__)
 app.secret_key = str(uuid.uuid4())
+app.config['SESSION_REFRESH_EACH_REQUEST'] = False
 
 handler = WebhookHandler(line_env['channel_secret'])
 
@@ -43,29 +45,57 @@ def callback():
 
 @app.route('/')
 def index():
-    # TODO about user_id
-    credentials = api_manager.get_credentials(line_env['user_id'])
-    if credentials is False:
-        return flask.redirect(flask.url_for('oauth2callback'))
-    response = '認証が完了しました。Smart Schedule でGoogle Calendarにアクセスできます。'
+    response = 'Hello, Smart Schedule'
     return response
 
 
-@app.route('/oauth2callback')
-def oauth2callback():
+@app.route('/oauth2')
+def oauth2():
     flow = client.flow_from_clientsecrets(
         os.path.join(APP_ROOT, 'client_secret.json'),
         scope='https://www.googleapis.com/auth/calendar',
         redirect_uri=flask.url_for('oauth2callback', _external=True))
-    if 'code' not in flask.request.args:
-        auth_uri = flow.step1_get_authorize_url()
-        return flask.redirect(auth_uri)
-    else:
-        auth_code = flask.request.args.get('code')
-        credentials = flow.step2_exchange(auth_code)
-        engine = create_engine(db_env['database_url'], echo=True)
-        session = sessionmaker(bind=engine, autocommit=True)()
-        with session.begin():
-            # TODO about user_id
-            session.add(Personal(user_id=line_env['user_id'], credential=credentials.to_json()))
-        return flask.redirect(flask.url_for('index'))
+    user_id = flask.request.args.get('user_id')
+    hash = flask.request.args.get('hash')
+    if user_id is None or hash is None:
+        print(user_id)
+        print(hash)
+        return 'パラメーターが不足しています'
+    m = hashlib.md5()
+    m.update(user_id.encode('utf-8'))
+    m.update(hash_env['seed'].encode('utf-8'))
+    if hash != m.hexdigest():
+        print(m.hexdigest())
+        print(hash_env['seed'])
+        return '不正なハッシュ値です'
+    print(flask.session)
+    flask.session['user_id'] = user_id
+    print('saved session')
+    print(flask.session)
+
+    auth_uri = flow.step1_get_authorize_url()
+    return flask.redirect(auth_uri)
+
+
+@app.route('/oauth2callback')
+def oauth2callback():
+    print(flask.session)
+    if 'user_id' not in flask.session:
+        return '不正なアクセスです。'
+    user_id = flask.session['user_id']
+    flask.session.pop('user_id')
+    flow = client.flow_from_clientsecrets(
+        os.path.join(APP_ROOT, 'client_secret.json'),
+        scope='https://www.googleapis.com/auth/calendar',
+        redirect_uri=flask.url_for('oauth2callback', _external=True))
+    auth_code = flask.request.args.get('code')
+    credentials = flow.step2_exchange(auth_code)
+    engine = create_engine(db_env['database_url'])
+    session = sessionmaker(bind=engine, autocommit=True)()
+    with session.begin():
+        session.add(Personal(user_id=user_id, credential=credentials.to_json()))
+    return 'あなたのLineとGoogleカレンダーが正常に紐付けられました。'
+
+
+if __name__ == "__main__":
+    app.run()
