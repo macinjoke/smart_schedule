@@ -17,7 +17,6 @@ from smart_schedule.settings import db_env
 from smart_schedule.settings import hash_env
 from smart_schedule.settings import APP_ROOT
 from smart_schedule.line import event_handler
-from smart_schedule.google_calendar import api_manager
 from smart_schedule.models import Personal
 
 app = Flask(__name__)
@@ -95,9 +94,7 @@ def oauth2callback():
     session = sessionmaker(bind=engine, autocommit=True)()
     with session.begin():
         session.add(Personal(user_id=user_id, credential=credentials.to_json()))
-    return 'あなたのLineとGoogleカレンダーが正常に紐付けられました。\nsession[\'user_id\']: {}'.format(
-        flask.session.get('user_id')
-    )
+    return 'あなたのLineとGoogleカレンダーが正常に紐付けられました。'
 
 
 if __name__ == "__main__":
