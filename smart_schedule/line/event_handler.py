@@ -39,9 +39,13 @@ def handle(handler, body, signature):
     @handler.add(MessageEvent, message=TextMessage)
     def handle_message(event):
         print(event)
-        if event.message.text == '認証':
+        # google calendar api のcredentialをDBから取得する
+        credentials = api_manager.get_credentials(event.source.user_id)
+        # DBに登録されていない場合、認証URLをリプライする
+        if credentials is None:
             google_auth_message(event)
             return
+        service = api_manager.build_service(credentials)
 
         time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         global up_day_flag
@@ -50,8 +54,6 @@ def handle(handler, body, signature):
 
         if day_flag:
             day_flag = False
-            credentials = api_manager.get_credentials(event.source.user_id)
-            service = api_manager.build_service(credentials)
             days = int(event.message.text)
             events = api_manager.get_events_after_n_days(service, days)
             reply_text = '{}日後の予定'.format(days)
@@ -72,8 +74,6 @@ def handle(handler, body, signature):
 
         if up_day_flag:
             up_day_flag = False
-            credentials = api_manager.get_credentials(event.source.user_id)
-            service = api_manager.build_service(credentials)
             days = int(event.message.text)
             events = api_manager.get_n_days_events(service, days)
             reply_text = '{}日後までの予定'.format(days)
@@ -94,8 +94,6 @@ def handle(handler, body, signature):
 
         if keyword_flag:
             keyword_flag = False
-            credentials = api_manager.get_credentials(event.source.user_id)
-            service = api_manager.build_service(credentials)
             keyword = event.message.text
             events = api_manager.get_events_by_title(service, keyword)
             reply_text = '{}の検索結果'.format(keyword)

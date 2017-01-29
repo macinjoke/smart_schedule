@@ -18,10 +18,10 @@ def get_credentials(user_id):
     try:
         credentials = client.OAuth2Credentials.from_json(personals[0].credential)
         if credentials.access_token_expired:
-            return False
+            return None
         return credentials
     except IndexError:
-        return False
+        return None
 
 
 def build_service(credentials):
