@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime
-
+import flask
 from flask import Flask
+import urllib
+import hashlib
 from linebot import (
     LineBotApi
 )
@@ -11,12 +13,14 @@ from linebot.exceptions import (
 )
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage, TemplateSendMessage,
-    PostbackEvent,StickerSendMessage)
+    PostbackEvent, StickerSendMessage)
 
 from smart_schedule.line.module import (
     exit_confirm, post_carousel, get_join_contents_buttons
 )
 from smart_schedule.settings import line_env
+from smart_schedule.settings import web_env
+from smart_schedule.settings import hash_env
 from smart_schedule.google_calendar import api_manager
 
 app = Flask(__name__)
@@ -35,6 +39,10 @@ def handle(handler, body, signature):
     @handler.add(MessageEvent, message=TextMessage)
     def handle_message(event):
         print(event)
+        if event.message.text == '認証':
+            google_auth_message(event)
+            return
+
         time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         global up_day_flag
         global day_flag
@@ -42,7 +50,7 @@ def handle(handler, body, signature):
 
         if day_flag:
             day_flag = False
-            credentials = api_manager.get_credentials(line_env['user_id'])
+            credentials = api_manager.get_credentials(event.source.user_id)
             service = api_manager.build_service(credentials)
             days = int(event.message.text)
             events = api_manager.get_events_after_n_days(service, days)
@@ -64,7 +72,7 @@ def handle(handler, body, signature):
 
         if up_day_flag:
             up_day_flag = False
-            credentials = api_manager.get_credentials(line_env['user_id'])
+            credentials = api_manager.get_credentials(event.source.user_id)
             service = api_manager.build_service(credentials)
             days = int(event.message.text)
             events = api_manager.get_n_days_events(service, days)
@@ -86,7 +94,7 @@ def handle(handler, body, signature):
 
         if keyword_flag:
             keyword_flag = False
-            credentials = api_manager.get_credentials(line_env['user_id'])
+            credentials = api_manager.get_credentials(event.source.user_id)
             service = api_manager.build_service(credentials)
             keyword = event.message.text
             events = api_manager.get_events_by_title(service, keyword)
@@ -205,3 +213,18 @@ def handle(handler, body, signature):
                 event.reply_token,
                 TextSendMessage(text="タイムアウトです。\nもう一度最初からやり直してください")
             )
+
+
+def google_auth_message(event):
+    auth_url = flask.url_for('oauth2')
+    user_id = event.source.user_id
+    m = hashlib.md5()
+    m.update(user_id.encode('utf-8'))
+    m.update(hash_env['seed'].encode('utf-8'))
+    params = urllib.parse.urlencode({'user_id': user_id, 'hash': m.hexdigest()})
+    url = '{}{}?{}'.format(web_env['host'], auth_url, params)
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text='このリンクから認証を行ってください\n{}'.format(url))
+    )
+

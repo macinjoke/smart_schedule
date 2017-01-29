@@ -11,7 +11,7 @@ from smart_schedule.settings import db_env
 
 
 def get_credentials(user_id):
-    engine = create_engine(db_env['database_url'], echo=True)
+    engine = create_engine(db_env['database_url'])
     session = sessionmaker(bind=engine, autocommit=True)()
     with session.begin():
         personals = session.query(Personal).filter(Personal.user_id == user_id)
