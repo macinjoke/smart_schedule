@@ -40,7 +40,14 @@ def handle(handler, body, signature):
     def handle_message(event):
         print(event)
         # google calendar api のcredentialをDBから取得する
-        credentials = api_manager.get_credentials(event.source.user_id)
+        if hasattr(event.source, 'user_id'):
+            credentials = api_manager.get_credentials(event.source.user_id)
+        elif hasattr(event.source, 'group_id'):
+            credentials = api_manager.get_credentials(event.source.group_id)
+        elif hasattr(event.source, 'room_id'):
+            credentials = api_manager.get_credentials(event.source.room_id)
+        else:
+            raise Exception('invalid `event.source`')
         # DBに登録されていない場合、認証URLをリプライする
         if credentials is None:
             google_auth_message(event)
@@ -215,7 +222,14 @@ def handle(handler, body, signature):
 
 def google_auth_message(event):
     auth_url = flask.url_for('oauth2')
-    user_id = event.source.user_id
+    if hasattr(event.source, 'user_id'):
+        user_id = event.source.user_id
+    elif hasattr(event.source, 'group_id'):
+        user_id = event.source.group_id
+    elif hasattr(event.source, 'room_id'):
+        user_id = event.source.room_id
+    else:
+        raise Exception('invalid `event.source`')
     m = hashlib.md5()
     m.update(user_id.encode('utf-8'))
     m.update(hash_env['seed'].encode('utf-8'))
