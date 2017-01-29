@@ -72,7 +72,8 @@ def handle(handler, body, signature):
                 end = e['end'].get('dateTime', e['end'].get('date'))
                 end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
                 end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
-                reply_text += '\n{}\n{}\n|\n{}\n'.format(summary, start, end)
+                reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary, start,
+                                                                                                       end)
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=reply_text)
@@ -92,7 +93,8 @@ def handle(handler, body, signature):
                 end = e['end'].get('dateTime', e['end'].get('date'))
                 end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
                 end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
-                reply_text += '\n{}\n{}\n|\n{}\n'.format(summary, start, end)
+                reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary, start,
+                                                                                                       end)
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=reply_text)
@@ -112,7 +114,8 @@ def handle(handler, body, signature):
                 end = e['end'].get('dateTime', e['end'].get('date'))
                 end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
                 end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
-                reply_text += '\n{}\n{}\n|\n{}\n'.format(summary, start, end)
+                reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary, start,
+                                                                                                       end)
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=reply_text)
@@ -201,10 +204,7 @@ def handle(handler, body, signature):
                 day_flag = True
                 line_bot_api.reply_message(
                     event.reply_token,
-                    [
-                        TextSendMessage(text="n日後の予定を表示します"),
-                        TextSendMessage(text="何日後の予定を表示しますか？\n例：5")
-                    ]
+                    TextSendMessage(text="何日後の予定を表示しますか？\n例：5")
                 )
             elif data[0] == "#up to n days_schedule":
                 global up_day_flag
