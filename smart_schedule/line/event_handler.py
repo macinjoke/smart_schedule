@@ -27,11 +27,6 @@ app = Flask(__name__)
 
 line_bot_api = LineBotApi(line_env['channel_access_token'])
 
-keyword_flag = False
-
-day_flag = False
-up_day_flag = False
-
 
 def handle(handler, body, signature):
     handler.handle(body, signature)
@@ -55,12 +50,9 @@ def handle(handler, body, signature):
         service = api_manager.build_service(credentials)
 
         time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        global up_day_flag
-        global day_flag
-        global keyword_flag
 
-        if day_flag:
-            day_flag = False
+        if api_manager.get_day_flag(event.source.user_id):
+            api_manager.set_day_flag(event.source.user_id, False)
             days = int(event.message.text)
             events = api_manager.get_events_after_n_days(service, days)
             reply_text = '{}日後の予定'.format(days)
@@ -80,8 +72,8 @@ def handle(handler, body, signature):
             )
             return -1
 
-        if up_day_flag:
-            up_day_flag = False
+        if api_manager.get_up_to_day_flag(event.source.user_id):
+            api_manager.set_up_to_day_flag(event.source.user_id, False)
             days = int(event.message.text)
             events = api_manager.get_n_days_events(service, days)
             reply_text = '{}日後までの予定'.format(days)
@@ -101,8 +93,8 @@ def handle(handler, body, signature):
             )
             return -1
 
-        if keyword_flag:
-            keyword_flag = False
+        if api_manager.get_keyword_flag(event.source.user_id):
+            api_manager.set_keyword_flag(event.source.user_id, False)
             keyword = event.message.text
             events = api_manager.get_events_by_title(service, keyword)
             reply_text = '{}の検索結果'.format(keyword)
@@ -193,22 +185,19 @@ def handle(handler, body, signature):
                     TextSendMessage(text="退出をキャンセルします。")
                 )
             elif data[0] == "#keyword_search":
-                global keyword_flag
-                keyword_flag = True
+                api_manager.set_keyword_flag(event.source.user_id, True)
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text="キーワードを入力してください\n例：バイト、研究室")
                 )
             elif data[0] == "#after n days_schedule":
-                global day_flag
-                day_flag = True
+                api_manager.set_day_flag(event.source.user_id, True)
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text="何日後の予定を表示しますか？\n例：5")
                 )
             elif data[0] == "#up to n days_schedule":
-                global up_day_flag
-                up_day_flag = True
+                api_manager.set_up_to_day_flag(event.source.user_id, True)
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text="何日後までの予定を表示しますか？\n例：5")
