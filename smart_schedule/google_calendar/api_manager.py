@@ -24,6 +24,54 @@ def get_credentials(user_id):
         return None
 
 
+def get_keyword_flag(user_id):
+    engine = create_engine(db_env['database_url'], echo=True)
+    session = sessionmaker(bind=engine, autocommit=True)()
+    with session.begin():
+        personals = session.query(Personal).filter(Personal.user_id == user_id)
+    return personals[0].keyword_flag
+
+
+def set_keyword_flag(user_id, bool):
+    engine = create_engine(db_env['database_url'], echo=True)
+    session = sessionmaker(bind=engine, autocommit=True)()
+    with session.begin():
+        personals = session.query(Personal).filter(Personal.user_id == user_id)
+        personals[0].keyword_flag = bool
+
+
+def get_day_flag(user_id):
+    engine = create_engine(db_env['database_url'], echo=True)
+    session = sessionmaker(bind=engine, autocommit=True)()
+    with session.begin():
+        personals = session.query(Personal).filter(Personal.user_id == user_id)
+    return personals[0].day_flag
+
+
+def set_day_flag(user_id, bool):
+    engine = create_engine(db_env['database_url'], echo=True)
+    session = sessionmaker(bind=engine, autocommit=True)()
+    with session.begin():
+        personals = session.query(Personal).filter(Personal.user_id == user_id)
+        personals[0].day_flag = bool
+
+
+def get_up_to_day_flag(user_id):
+    engine = create_engine(db_env['database_url'], echo=True)
+    session = sessionmaker(bind=engine, autocommit=True)()
+    with session.begin():
+        personals = session.query(Personal).filter(Personal.user_id == user_id)
+    return personals[0].up_to_day_flag
+
+
+def set_up_to_day_flag(user_id, bool):
+    engine = create_engine(db_env['database_url'], echo=True)
+    session = sessionmaker(bind=engine, autocommit=True)()
+    with session.begin():
+        personals = session.query(Personal).filter(Personal.user_id == user_id)
+        personals[0].up_to_day_flag = bool
+
+
 def build_service(credentials):
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('calendar', 'v3', http=http)
