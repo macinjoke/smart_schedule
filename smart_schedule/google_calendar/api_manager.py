@@ -9,7 +9,6 @@ from sqlalchemy.orm import sessionmaker
 from smart_schedule.models import Personal
 from smart_schedule.settings import db_env
 
-
 def get_credentials(user_id):
     engine = create_engine(db_env['database_url'])
     session = sessionmaker(bind=engine, autocommit=True)()
@@ -18,14 +17,16 @@ def get_credentials(user_id):
     try:
         credentials = client.OAuth2Credentials.from_json(personals[0].credential)
         if credentials.access_token_expired:
-            return None
+            http = credentials.authorize(httplib2.Http())
+            credentials.refresh(http)
+            return credentials
         return credentials
     except IndexError:
         return None
 
 
 def get_keyword_flag(user_id):
-    engine = create_engine(db_env['database_url'], echo=True)
+    engine = create_engine(db_env['database_url'])
     session = sessionmaker(bind=engine, autocommit=True)()
     with session.begin():
         personals = session.query(Personal).filter(Personal.user_id == user_id)
@@ -33,7 +34,7 @@ def get_keyword_flag(user_id):
 
 
 def set_keyword_flag(user_id, bool):
-    engine = create_engine(db_env['database_url'], echo=True)
+    engine = create_engine(db_env['database_url'])
     session = sessionmaker(bind=engine, autocommit=True)()
     with session.begin():
         personals = session.query(Personal).filter(Personal.user_id == user_id)
@@ -41,7 +42,7 @@ def set_keyword_flag(user_id, bool):
 
 
 def get_day_flag(user_id):
-    engine = create_engine(db_env['database_url'], echo=True)
+    engine = create_engine(db_env['database_url'])
     session = sessionmaker(bind=engine, autocommit=True)()
     with session.begin():
         personals = session.query(Personal).filter(Personal.user_id == user_id)
@@ -49,7 +50,7 @@ def get_day_flag(user_id):
 
 
 def set_day_flag(user_id, bool):
-    engine = create_engine(db_env['database_url'], echo=True)
+    engine = create_engine(db_env['database_url'])
     session = sessionmaker(bind=engine, autocommit=True)()
     with session.begin():
         personals = session.query(Personal).filter(Personal.user_id == user_id)
@@ -57,7 +58,7 @@ def set_day_flag(user_id, bool):
 
 
 def get_up_to_day_flag(user_id):
-    engine = create_engine(db_env['database_url'], echo=True)
+    engine = create_engine(db_env['database_url'])
     session = sessionmaker(bind=engine, autocommit=True)()
     with session.begin():
         personals = session.query(Personal).filter(Personal.user_id == user_id)
@@ -65,7 +66,7 @@ def get_up_to_day_flag(user_id):
 
 
 def set_up_to_day_flag(user_id, bool):
-    engine = create_engine(db_env['database_url'], echo=True)
+    engine = create_engine(db_env['database_url'])
     session = sessionmaker(bind=engine, autocommit=True)()
     with session.begin():
         personals = session.query(Personal).filter(Personal.user_id == user_id)
