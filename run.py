@@ -51,10 +51,6 @@ def index():
 
 @app.route('/oauth2')
 def oauth2():
-    flow = client.flow_from_clientsecrets(
-        os.path.join(APP_ROOT, 'client_secret.json'),
-        scope='https://www.googleapis.com/auth/calendar',
-        redirect_uri=flask.url_for('oauth2callback', _external=True))
     user_id = flask.request.args.get('user_id')
     hash = flask.request.args.get('hash')
     if user_id is None or hash is None:
@@ -73,6 +69,10 @@ def oauth2():
     print('saved session')
     print(flask.session)
 
+    flow = client.flow_from_clientsecrets(
+        os.path.join(APP_ROOT, 'client_secret.json'),
+        scope='https://www.googleapis.com/auth/calendar',
+        redirect_uri=flask.url_for('oauth2callback', _external=True))
     auth_uri = flow.step1_get_authorize_url()
     return flask.redirect(auth_uri)
 
@@ -88,6 +88,7 @@ def oauth2callback():
         os.path.join(APP_ROOT, 'client_secret.json'),
         scope='https://www.googleapis.com/auth/calendar',
         redirect_uri=flask.url_for('oauth2callback', _external=True))
+    flow.params['access_type'] = 'offline'
     auth_code = flask.request.args.get('code')
     credentials = flow.step2_exchange(auth_code)
     engine = create_engine(db_env['database_url'])
