@@ -34,15 +34,16 @@ def handle(handler, body, signature):
     @handler.add(MessageEvent, message=TextMessage)
     def handle_message(event):
         print(event)
-        # google calendar api のcredentialをDBから取得する
-        if hasattr(event.source, 'user_id'):
-            credentials = api_manager.get_credentials(event.source.user_id)
-        elif hasattr(event.source, 'group_id'):
-            credentials = api_manager.get_credentials(event.source.group_id)
-        elif hasattr(event.source, 'room_id'):
-            credentials = api_manager.get_credentials(event.source.room_id)
+        if event.source.type == 'user':
+            talk_id = event.source.user_id
+        elif event.source.type == 'group':
+            talk_id = event.source.group_id
+        elif event.source.type == 'room':
+            talk_id = event.source.room_id
         else:
             raise Exception('invalid `event.source`')
+        # google calendar api のcredentialをDBから取得する
+        credentials = api_manager.get_credentials(talk_id)
         # DBに登録されていない場合、認証URLをリプライする
         if credentials is None:
             google_auth_message(event)
@@ -51,8 +52,8 @@ def handle(handler, body, signature):
 
         time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        if api_manager.get_day_flag(event.source.user_id):
-            api_manager.set_day_flag(event.source.user_id, False)
+        if api_manager.get_day_flag(talk_id):
+            api_manager.set_day_flag(talk_id, False)
             days = int(event.message.text)
             events = api_manager.get_events_after_n_days(service, days)
             reply_text = '{}日後の予定'.format(days)
@@ -72,8 +73,8 @@ def handle(handler, body, signature):
             )
             return -1
 
-        if api_manager.get_up_to_day_flag(event.source.user_id):
-            api_manager.set_up_to_day_flag(event.source.user_id, False)
+        if api_manager.get_up_to_day_flag(talk_id):
+            api_manager.set_up_to_day_flag(talk_id, False)
             days = int(event.message.text)
             events = api_manager.get_n_days_events(service, days)
             reply_text = '{}日後までの予定'.format(days)
@@ -93,8 +94,8 @@ def handle(handler, body, signature):
             )
             return -1
 
-        if api_manager.get_keyword_flag(event.source.user_id):
-            api_manager.set_keyword_flag(event.source.user_id, False)
+        if api_manager.get_keyword_flag(talk_id):
+            api_manager.set_keyword_flag(talk_id, False)
             keyword = event.message.text
             events = api_manager.get_events_by_title(service, keyword)
             reply_text = '{}の検索結果'.format(keyword)
@@ -153,6 +154,14 @@ def handle(handler, body, signature):
     @handler.add(PostbackEvent)
     def handle_postback(event):
         print("postbackevent: {}".format(event))
+        if event.source.type == 'user':
+            talk_id = event.source.user_id
+        elif event.source.type == 'group':
+            talk_id = event.source.group_id
+        elif event.source.type == 'room':
+            talk_id = event.source.room_id
+        else:
+            raise Exception('invalid `event.source`')
         data = event.postback.data.split(',')
         print(data)
         print(data[1])
@@ -185,19 +194,19 @@ def handle(handler, body, signature):
                     TextSendMessage(text="退出をキャンセルします。")
                 )
             elif data[0] == "#keyword_search":
-                api_manager.set_keyword_flag(event.source.user_id, True)
+                api_manager.set_keyword_flag(talk_id, True)
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text="キーワードを入力してください\n例：バイト、研究室")
                 )
             elif data[0] == "#after n days_schedule":
-                api_manager.set_day_flag(event.source.user_id, True)
+                api_manager.set_day_flag(talk_id, True)
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text="何日後の予定を表示しますか？\n例：5")
                 )
             elif data[0] == "#up to n days_schedule":
-                api_manager.set_up_to_day_flag(event.source.user_id, True)
+                api_manager.set_up_to_day_flag(talk_id, True)
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text="何日後までの予定を表示しますか？\n例：5")
@@ -211,18 +220,18 @@ def handle(handler, body, signature):
 
 def google_auth_message(event):
     auth_url = flask.url_for('oauth2')
-    if hasattr(event.source, 'user_id'):
-        user_id = event.source.user_id
-    elif hasattr(event.source, 'group_id'):
-        user_id = event.source.group_id
-    elif hasattr(event.source, 'room_id'):
-        user_id = event.source.room_id
+    if event.source.type == 'user':
+        talk_id = event.source.user_id
+    elif event.source.type == 'group':
+        talk_id = event.source.group_id
+    elif event.source.type == 'room':
+        talk_id = event.source.room_id
     else:
         raise Exception('invalid `event.source`')
     m = hashlib.md5()
-    m.update(user_id.encode('utf-8'))
+    m.update(talk_id.encode('utf-8'))
     m.update(hash_env['seed'].encode('utf-8'))
-    params = urllib.parse.urlencode({'user_id': user_id, 'hash': m.hexdigest()})
+    params = urllib.parse.urlencode({'talk_id': talk_id, 'hash': m.hexdigest()})
     url = '{}{}?{}'.format(web_env['host'], auth_url, params)
     line_bot_api.reply_message(
         event.reply_token,

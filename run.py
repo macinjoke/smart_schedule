@@ -51,21 +51,21 @@ def index():
 
 @app.route('/oauth2')
 def oauth2():
-    user_id = flask.request.args.get('user_id')
+    talk_id = flask.request.args.get('talk_id')
     hash = flask.request.args.get('hash')
-    if user_id is None or hash is None:
-        print(user_id)
+    if talk_id is None or hash is None:
+        print(talk_id)
         print(hash)
         return 'パラメーターが不足しています'
     m = hashlib.md5()
-    m.update(user_id.encode('utf-8'))
+    m.update(talk_id.encode('utf-8'))
     m.update(hash_env['seed'].encode('utf-8'))
     if hash != m.hexdigest():
         print(m.hexdigest())
         print(hash_env['seed'])
         return '不正なハッシュ値です'
     print(flask.session)
-    flask.session['user_id'] = user_id
+    flask.session['talk_id'] = talk_id
     print('saved session')
     print(flask.session)
 
@@ -80,10 +80,10 @@ def oauth2():
 @app.route('/oauth2callback')
 def oauth2callback():
     print(flask.session)
-    if 'user_id' not in flask.session:
+    if 'talk_id' not in flask.session:
         return '不正なアクセスです。'
-    user_id = flask.session['user_id']
-    flask.session.pop('user_id')
+    talk_id = flask.session['talk_id']
+    flask.session.pop('talk_id')
     flow = client.flow_from_clientsecrets(
         os.path.join(APP_ROOT, 'client_secret.json'),
         scope='https://www.googleapis.com/auth/calendar',
@@ -94,7 +94,7 @@ def oauth2callback():
     engine = create_engine(db_env['database_url'])
     session = sessionmaker(bind=engine, autocommit=True)()
     with session.begin():
-        session.add(Personal(user_id=user_id, credential=credentials.to_json()))
+        session.add(Personal(user_id=talk_id, credential=credentials.to_json()))
     return 'あなたのLineとGoogleカレンダーが正常に紐付けられました。'
 
 
