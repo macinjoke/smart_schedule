@@ -22,6 +22,10 @@ from smart_schedule.settings import line_env
 from smart_schedule.settings import web_env
 from smart_schedule.settings import hash_env
 from smart_schedule.google_calendar import api_manager
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from smart_schedule.models import Personal
+from smart_schedule.settings import db_env
 
 app = Flask(__name__)
 
@@ -52,68 +56,77 @@ def handle(handler, body, signature):
 
         time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        if api_manager.get_day_flag(talk_id):
-            api_manager.set_day_flag(talk_id, False)
-            days = int(event.message.text)
-            events = api_manager.get_events_after_n_days(service, days)
-            reply_text = '{}日後の予定'.format(days)
-            for e in events:
-                summary = e['summary']
-                start = e['start'].get('dateTime', e['start'].get('date'))
-                start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
-                start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
-                end = e['end'].get('dateTime', e['end'].get('date'))
-                end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
-                end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
-                reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary, start,
-                                                                                                       end)
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=reply_text)
-            )
-            return -1
+        # DBにアクセスし、セッションを開始
+        engine = create_engine(db_env['database_url'])
+        session = sessionmaker(bind=engine, autocommit=True)()
+        with session.begin():
+            person = session.query(Personal).filter(Personal.user_id == talk_id).one()
+            if person.day_flag:
+                person.day_flag = False
+                days = int(event.message.text)
+                events = api_manager.get_events_after_n_days(service, days)
+                reply_text = '{}日後の予定'.format(days)
+                for e in events:
+                    summary = e['summary']
+                    start = e['start'].get('dateTime', e['start'].get('date'))
+                    start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
+                    start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
+                    end = e['end'].get('dateTime', e['end'].get('date'))
+                    end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
+                    end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
+                    reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary,
+                                                                                                           start,
+                                                                                                           end)
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text=reply_text)
+                )
+                return -1
 
-        if api_manager.get_up_to_day_flag(talk_id):
-            api_manager.set_up_to_day_flag(talk_id, False)
-            days = int(event.message.text)
-            events = api_manager.get_n_days_events(service, days)
-            reply_text = '{}日後までの予定'.format(days)
-            for e in events:
-                summary = e['summary']
-                start = e['start'].get('dateTime', e['start'].get('date'))
-                start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
-                start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
-                end = e['end'].get('dateTime', e['end'].get('date'))
-                end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
-                end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
-                reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary, start,
-                                                                                                       end)
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=reply_text)
-            )
-            return -1
+            if person.up_to_day_flag:
+                person.up_to_day_flag = False
+                days = int(event.message.text)
+                events = api_manager.get_n_days_events(service, days)
+                reply_text = '{}日後までの予定'.format(days)
+                for e in events:
+                    summary = e['summary']
+                    start = e['start'].get('dateTime', e['start'].get('date'))
+                    start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
+                    start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
+                    end = e['end'].get('dateTime', e['end'].get('date'))
+                    end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
+                    end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
+                    reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary,
+                                                                                                           start,
+                                                                                                           end)
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text=reply_text)
+                )
+                return -1
 
-        if api_manager.get_keyword_flag(talk_id):
-            api_manager.set_keyword_flag(talk_id, False)
-            keyword = event.message.text
-            events = api_manager.get_events_by_title(service, keyword)
-            reply_text = '{}の検索結果'.format(keyword)
-            for e in events:
-                summary = e['summary']
-                start = e['start'].get('dateTime', e['start'].get('date'))
-                start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
-                start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
-                end = e['end'].get('dateTime', e['end'].get('date'))
-                end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
-                end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
-                reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary, start,
-                                                                                                       end)
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=reply_text)
-            )
-            return -1
+            if person.keyword_flag:
+                person.keyword_flag = False
+                keyword = event.message.text
+                events = api_manager.get_events_by_title(service, keyword)
+                reply_text = '{}の検索結果'.format(keyword)
+                for e in events:
+                    summary = e['summary']
+                    start = e['start'].get('dateTime', e['start'].get('date'))
+                    start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
+                    start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
+                    end = e['end'].get('dateTime', e['end'].get('date'))
+                    end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
+                    end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
+                    reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary,
+                                                                                                           start,
+                                                                                                           end)
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text=reply_text)
+                )
+                return -1
+
         if event.message.text == "#menu":
             post_carousel(event.reply_token)
             return -1
