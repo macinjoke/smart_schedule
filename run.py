@@ -1,5 +1,7 @@
 from flask import Flask, request, abort
 import flask
+from flask_session import Session
+from flask_sqlalchemy import SQLAlchemy
 from oauth2client import client
 import os
 import uuid
@@ -20,8 +22,15 @@ from smart_schedule.line import event_handler
 from smart_schedule.models import Personal
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+db = SQLAlchemy(app)
+app.config['SESSION_SQLALCHEMY'] = db
+app.config['SQLALCHEMY_DATABASE_URI'] = db_env['database_url']
 app.secret_key = str(uuid.uuid4())
-app.config['SESSION_REFRESH_EACH_REQUEST'] = False
+SESSION_TYPE = 'sqlalchemy'
+app.config.from_object(__name__)
+Session(app)
+
 
 handler = WebhookHandler(line_env['channel_secret'])
 
@@ -82,8 +91,7 @@ def oauth2callback():
     print(flask.session)
     if 'talk_id' not in flask.session:
         return '不正なアクセスです。'
-    talk_id = flask.session['talk_id']
-    flask.session.pop('talk_id')
+    talk_id = flask.session.pop('talk_id')
     flow = client.flow_from_clientsecrets(
         os.path.join(APP_ROOT, 'client_secret.json'),
         scope='https://www.googleapis.com/auth/calendar',
