@@ -26,30 +26,6 @@ def get_credentials(talk_id):
         return None
 
 
-def set_keyword_flag(talk_id, bool):
-    engine = create_engine(db_env['database_url'])
-    session = sessionmaker(bind=engine, autocommit=True)()
-    with session.begin():
-        personals = session.query(Personal).filter(Personal.user_id == talk_id)
-        personals[0].keyword_flag = bool
-
-
-def set_day_flag(talk_id, bool):
-    engine = create_engine(db_env['database_url'])
-    session = sessionmaker(bind=engine, autocommit=True)()
-    with session.begin():
-        personals = session.query(Personal).filter(Personal.user_id == talk_id)
-        personals[0].day_flag = bool
-
-
-def set_up_to_day_flag(talk_id, bool):
-    engine = create_engine(db_env['database_url'])
-    session = sessionmaker(bind=engine, autocommit=True)()
-    with session.begin():
-        personals = session.query(Personal).filter(Personal.user_id == talk_id)
-        personals[0].up_to_day_flag = bool
-
-
 def build_service(credentials):
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('calendar', 'v3', http=http)

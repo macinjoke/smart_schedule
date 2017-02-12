@@ -206,24 +206,30 @@ def handle(handler, body, signature):
                     event.reply_token,
                     TextSendMessage(text="退出をキャンセルします。")
                 )
-            elif data[0] == "#keyword_search":
-                api_manager.set_keyword_flag(talk_id, True)
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text="キーワードを入力してください\n例：バイト、研究室")
-                )
-            elif data[0] == "#after n days_schedule":
-                api_manager.set_day_flag(talk_id, True)
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text="何日後の予定を表示しますか？\n例：5")
-                )
-            elif data[0] == "#up to n days_schedule":
-                api_manager.set_up_to_day_flag(talk_id, True)
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    TextSendMessage(text="何日後までの予定を表示しますか？\n例：5")
-                )
+            else:
+                # DBにアクセスし、セッションを開始
+                engine = create_engine(db_env['database_url'])
+                session = sessionmaker(bind=engine, autocommit=True)()
+                with session.begin():
+                    person = session.query(Personal).filter(Personal.user_id == talk_id).one()
+                    if data[0] == "#keyword_search":
+                        person.keyword_flag = True
+                        line_bot_api.reply_message(
+                            event.reply_token,
+                            TextSendMessage(text="キーワードを入力してください\n例：バイト、研究室")
+                        )
+                    elif data[0] == "#after n days_schedule":
+                        person.day_flag = True
+                        line_bot_api.reply_message(
+                            event.reply_token,
+                            TextSendMessage(text="何日後の予定を表示しますか？\n例：5")
+                        )
+                    elif data[0] == "#up to n days_schedule":
+                        person.up_to_day_flag = True
+                        line_bot_api.reply_message(
+                            event.reply_token,
+                            TextSendMessage(text="何日後までの予定を表示しますか？\n例：5")
+                        )
         else:
             line_bot_api.reply_message(
                 event.reply_token,
