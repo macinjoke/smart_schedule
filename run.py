@@ -1,6 +1,6 @@
 from flask import Flask, request, abort
 import flask
-from flask_session import Session
+from flask_session import Session, SqlAlchemySessionInterface
 from flask_sqlalchemy import SQLAlchemy
 from oauth2client import client
 import os
@@ -18,19 +18,9 @@ from smart_schedule.settings import line_env
 from smart_schedule.settings import db_env
 from smart_schedule.settings import hash_env
 from smart_schedule.settings import APP_ROOT
+from smart_schedule.settings import app
 from smart_schedule.line import event_handler
 from smart_schedule.models import Personal
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-db = SQLAlchemy(app)
-app.config['SESSION_SQLALCHEMY'] = db
-app.config['SQLALCHEMY_DATABASE_URI'] = db_env['database_url']
-app.secret_key = str(uuid.uuid4())
-SESSION_TYPE = 'sqlalchemy'
-app.config.from_object(__name__)
-Session(app)
-
 
 handler = WebhookHandler(line_env['channel_secret'])
 
