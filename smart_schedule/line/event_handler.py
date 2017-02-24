@@ -56,6 +56,34 @@ def handle(handler, body, signature):
 
         time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+        # メニューを表示する
+        if event.message.text == "#menu":
+            post_carousel(event.reply_token)
+            return -1
+
+        # グループのメニューを表示する
+        if event.message.text == "Gmenu" and not event.source.type == "user":
+            buttons_template_message = TemplateSendMessage(
+
+            )
+            line_bot_api.reply_message(
+                event.reply_token,
+                buttons_template_message
+            )
+            return -1
+
+        # 退出の確認を表示
+        if event.message.text == "退出" and not event.source.type == "user":
+            confirm_message = TemplateSendMessage(
+                alt_text='Confirm template',
+                template = exit_confirm(time)
+            )
+            line_bot_api.reply_message(
+                event.reply_token,
+                confirm_message
+            )
+            return -1
+
         # DBにアクセスし、セッションを開始
         engine = create_engine(db_env['database_url'])
         session = sessionmaker(bind=engine, autocommit=True)()
@@ -97,42 +125,28 @@ def handle(handler, body, signature):
                 )
                 return -1
 
-        if event.message.text == "#menu":
-            post_carousel(event.reply_token)
-            return -1
-        if not event.message.text.startswith("予定 "):
-            if event.message.text.startswith("大好き"):
-                reply_text = "大好きだよ！！！".format(event.message.text)
-            elif event.message.text.startswith("退出") and not event.source.type == "user":
-                confirm_message = TemplateSendMessage(
-                    alt_text='Confirm template',
-                    template=exit_confirm(time)
-                )
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    confirm_message
-                )
-                return -1
-            else:
-                reply_text = event.message.text
+            if person.adjust_flag:
+                # グループの予定調整を終了
+                if event.message.text == "OK!!":
+                    person.adjust_flag = False
+                    return -1
 
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=reply_text)
-            )
-            return -1
+                data = event.message.text.split(' ')
+                name = data[0]
+                days = data[1]
+                date = days.split(',')
 
-        schedule_name = event.message.text.split(maxsplit=1)[1]
-        buttons_template_message = TemplateSendMessage(
-            alt_text='Buttons template',
-            template=get_join_contents_buttons(schedule_name, time)
-        )
-        print(buttons_template_message)
-        # text_send_message = TextSendMessage(text=reply_text)
-        line_bot_api.reply_message(
-            event.reply_token,
-            buttons_template_message
-        )
+        # schedule_name = event.message.text.split(maxsplit=1)[1]
+        # buttons_template_message = TemplateSendMessage(
+        #     alt_text='Buttons template',
+        #     template=get_join_contents_buttons(schedule_name, time)
+        # )
+        # print(buttons_template_message)
+        # # text_send_message = TextSendMessage(text=reply_text)
+        # line_bot_api.reply_message(
+        #     event.reply_token,
+        #     buttons_template_message
+        # )
 
     @handler.add(PostbackEvent)
     def handle_postback(event):
@@ -176,6 +190,13 @@ def handle(handler, body, signature):
                     event.reply_token,
                     TextSendMessage(text="退出をキャンセルします。")
                 )
+            elif data[0] == "adjust":
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="空いてる日を入力してください\n例：橋本 1/1,1/2,1/3,1/4")
+                )
+            elif data[0] == "g-calender":
+                post_carousel(event.reply_token)
             else:
                 # DBにアクセスし、セッションを開始
                 engine = create_engine(db_env['database_url'])
@@ -200,6 +221,40 @@ def handle(handler, body, signature):
                             event.reply_token,
                             TextSendMessage(text="何日後までの予定を表示しますか？\n例：5")
                         )
+                    elif data[0] == "today_schedeule":
+                        credentials = api_manager.get_credentials(line_env['user_id'])
+                        service = api_manager.build_service(credentials)
+                        days = 0
+                        events = api_manager.get_events_after_n_days(service, days)
+                        reply_text = '今日の予定'
+                        reply_text = generate_message_from_events(events, reply_text)
+                        line_bot_api.reply_message(
+                            event.reply_token,
+                            TextSendMessage(text=reply_text)
+                        )
+                    elif data[0] == "#tomorrow_schedule":
+                        credentials = api_manager.get_credentials(line_env['user_id'])
+                        service = api_manager.build_service(credentials)
+                        days = 1
+                        events = api_manager.get_events_after_n_days(service, days)
+                        reply_text = '明日の予定'
+                        reply_text = generate_message_from_events(events, reply_text)
+                        line_bot_api.reply_message(
+                            event.reply_token,
+                            TextSendMessage(text=reply_text)
+                        )
+                    elif data[0] == "#7days_schedule":
+                        credentials = api_manager.get_credentials(line_env['user_id'])
+                        service = api_manager.build_service(credentials)
+                        days = 7
+                        events = api_manager.get_events_after_n_days(service, days)
+                        reply_text = '明日の予定'
+                        reply_text = generate_message_from_events(events, reply_text)
+                        line_bot_api.reply_message(
+                            event.reply_token,
+                            TextSendMessage(text=reply_text)
+                        )
+
         else:
             line_bot_api.reply_message(
                 event.reply_token,
