@@ -66,17 +66,7 @@ def handle(handler, body, signature):
                 days = int(event.message.text)
                 events = api_manager.get_events_after_n_days(service, days)
                 reply_text = '{}日後の予定'.format(days)
-                for e in events:
-                    summary = e['summary']
-                    start = e['start'].get('dateTime', e['start'].get('date'))
-                    start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
-                    start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
-                    end = e['end'].get('dateTime', e['end'].get('date'))
-                    end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
-                    end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
-                    reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary,
-                                                                                                           start,
-                                                                                                           end)
+                reply_text = generate_message_from_events(events, reply_text)
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text=reply_text)
@@ -88,17 +78,7 @@ def handle(handler, body, signature):
                 days = int(event.message.text)
                 events = api_manager.get_n_days_events(service, days)
                 reply_text = '{}日後までの予定'.format(days)
-                for e in events:
-                    summary = e['summary']
-                    start = e['start'].get('dateTime', e['start'].get('date'))
-                    start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
-                    start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
-                    end = e['end'].get('dateTime', e['end'].get('date'))
-                    end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
-                    end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
-                    reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary,
-                                                                                                           start,
-                                                                                                           end)
+                reply_text = generate_message_from_events(events, reply_text)
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text=reply_text)
@@ -110,17 +90,7 @@ def handle(handler, body, signature):
                 keyword = event.message.text
                 events = api_manager.get_events_by_title(service, keyword)
                 reply_text = '{}の検索結果'.format(keyword)
-                for e in events:
-                    summary = e['summary']
-                    start = e['start'].get('dateTime', e['start'].get('date'))
-                    start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
-                    start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
-                    end = e['end'].get('dateTime', e['end'].get('date'))
-                    end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
-                    end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
-                    reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary,
-                                                                                                           start,
-                                                                                                           end)
+                reply_text = generate_message_from_events(events, reply_text)
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text=reply_text)
@@ -257,3 +227,17 @@ def google_auth_message(event):
         TextSendMessage(text='このリンクから認証を行ってください\n{}'.format(url))
     )
 
+
+def generate_message_from_events(events, reply_text):
+    for e in events:
+        summary = e['summary']
+        start = e['start'].get('dateTime', e['start'].get('date'))
+        start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
+        start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
+        end = e['end'].get('dateTime', e['end'].get('date'))
+        end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
+        end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
+        reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary,
+                                                                                               start,
+                                                                                               end)
+    return reply_text
