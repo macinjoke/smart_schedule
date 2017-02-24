@@ -18,8 +18,15 @@ def get_credentials(talk_id):
     try:
         credentials = client.OAuth2Credentials.from_json(personals[0].credential)
         if credentials.access_token_expired:
+            print('認証の期限が切れています')
             http = credentials.authorize(httplib2.Http())
             credentials.refresh(http)
+            print('リフレッシュしました')
+            session = sessionmaker(bind=engine, autocommit=True)()
+            with session.begin():
+                personal = session.query(Personal).filter_by(user_id=talk_id).one()
+                personal.credential = credentials.to_json()
+            print('新しい認証情報をDBに保存しました')
             return credentials
         return credentials
     except IndexError:
