@@ -158,18 +158,6 @@ def handle(handler, body, signature):
                 days = data[1]
                 date = days.split(',')
 
-        # schedule_name = event.message.text.split(maxsplit=1)[1]
-        # buttons_template_message = TemplateSendMessage(
-        #     alt_text='Buttons template',
-        #     template=get_join_contents_buttons(schedule_name, time)
-        # )
-        # print(buttons_template_message)
-        # # text_send_message = TextSendMessage(text=reply_text)
-        # line_bot_api.reply_message(
-        #     event.reply_token,
-        #     buttons_template_message
-        # )
-
     @handler.add(PostbackEvent)
     def handle_postback(event):
         print("postbackevent: {}".format(event))
