@@ -16,7 +16,7 @@ from linebot.models import (
     PostbackEvent, StickerSendMessage)
 
 from smart_schedule.line.module import (
-    exit_confirm, post_carousel, group_menu_buttons
+    exit_confirm, post_carousel, display_group_menu_buttons
 )
 from smart_schedule.settings import line_env
 from smart_schedule.settings import web_env
@@ -65,7 +65,7 @@ def handle(handler, body, signature):
         if event.message.text == "Gmenu" and not event.source.type == "user":
             buttons_template_message = TemplateSendMessage(
                 alt_text='Button template',
-                template=group_menu_buttons(time)
+                template=display_group_menu_buttons(time)
             )
             line_bot_api.reply_message(
                 event.reply_token,
