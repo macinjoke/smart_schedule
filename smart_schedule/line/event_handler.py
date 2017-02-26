@@ -119,7 +119,8 @@ def handle(handler, body, signature):
                 keyword = event.message.text
                 events = api_manager.get_events_by_title(service, keyword)
                 reply_text = '{}の検索結果'.format(keyword)
-                reply_text = generate_message_from_events(events, reply_text)
+                reply_text += generate_message_from_events(events, reply_text)
+
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text=reply_text)
@@ -128,7 +129,7 @@ def handle(handler, body, signature):
             # グループでのメンバー登録
             if event.message.text.startswith("メンバー登録 ") and not event.source.type == 'user':
                 username = event.message.text.split(maxsplit=1)[1]
-                session.add(GroupUser(name=username, group_id=talk_id))
+                session.add(GroupUser(name=username, group_id=person.id))
                 reply_text = '{}をグループのメンバーに登録しました'.format(username)
                 line_bot_api.reply_message(
                     event.reply_token,
@@ -141,7 +142,7 @@ def handle(handler, body, signature):
                 if event.message.text == "OK!!":
                     person.adjust_flag = False
                     return -1
-                group_member = session.query(GroupUser).filter(GroupUser.group_id == talk_id)
+                group_member = session.query(GroupUser).filter(GroupUser.group_id == person.id).all()
                 # グループのメンバーをシステムに登録していなかった場合
                 if len(group_member) == 0:
                     reply_text = 'グループのメンバーを登録してください\n例：メンバー登録 橋本'
@@ -277,16 +278,31 @@ def handle(handler, body, signature):
                         )
                     # グループメンバー一覧を表示
                     elif data[0] == "#member":
-                        members = session.query(GroupUser).filter(GroupUser.group_id == talk_id).all()
+                        members = session.query(GroupUser).filter(GroupUser.group_id == person.id).all()
+                        print(members)
                         reply_text = '登録されているメンバー一覧\n'
                         for e in members:
-                            reply_text += e + '\n'
+                            reply_text += e.name
+                            reply_text += '\n'
+                        line_bot_api.reply_message(
+                            event.reply_token,
+                            TextSendMessage(text=reply_text)
+                        )
                     # 調整機能の呼び出し
                     elif data[0] == "#adjust":
+                        members = session.query(GroupUser).filter(GroupUser.group_id == person.id).all()
+                        # グループのメンバーをシステムに登録していなかった場合
+                        if len(members) == 0:
+                            reply_text = 'グループのメンバーを登録してください\n例：メンバー登録 橋本'
+                            line_bot_api.reply_message(
+                                event.reply_token,
+                                TextSendMessage(text=reply_text)
+                            )
+                            return -1
                         person.adjust_flag = True
                         line_bot_api.reply_message(
                             event.reply_token,
-                            TextSendMessage(text="空いてる日を入力してください\n例：橋本 1/1,1/2,1/3,1/4\n予定調整を終了する際は「OK!!」と入力してください")
+                            TextSendMessage(text="空いてる日を入力してください\n例：橋本 1/1,1/2,1/3,1/4\n\n※予定調整を終了する際は「OK!!」と入力してください")
                         )
 
         else:
