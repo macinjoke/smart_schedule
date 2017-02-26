@@ -13,6 +13,7 @@ from smart_schedule.settings import line_env
 
 def exit_confirm(time):
     return ConfirmTemplate(
+        type="confirm",
         text="本当に退出させますか？",
         actions=[
             PostbackTemplateAction(
@@ -31,6 +32,7 @@ def get_join_contents_buttons(time):
     return ButtonsTemplate(
         # 芝刈り機のイラスト
         # thumbnail_image_url='https://2.bp.blogspot.com/-SObo8z0Ajyw/V9ppuyMxT2I/AAAAAAAA9xI/jwNeixWhDeMJ6K_z96edB45umM6WTftVQCLcB/s800/kusakari_shibakari.png',
+        type="buttons",
         title="グループメニュー",
         text="機能を選択してください",
         actions=[

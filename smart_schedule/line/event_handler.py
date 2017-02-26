@@ -63,7 +63,10 @@ def handle(handler, body, signature):
 
         # グループのメニューを表示する
         if event.message.text == "Gmenu" and not event.source.type == "user":
-            buttons_template_message = get_join_contents_buttons(time=time)
+            buttons_template_message = TextSendMessage(
+                alt_text='Button template',
+                template=get_join_contents_buttons(time=time)
+            )
             line_bot_api.reply_message(
                 event.reply_token,
                 buttons_template_message
@@ -74,7 +77,7 @@ def handle(handler, body, signature):
         if event.message.text == "退出" and not event.source.type == "user":
             confirm_message = TemplateSendMessage(
                 alt_text='Confirm template',
-                template = exit_confirm(time)
+                template=exit_confirm(time)
             )
             line_bot_api.reply_message(
                 event.reply_token,
@@ -239,7 +242,7 @@ def handle(handler, body, signature):
                             event.reply_token,
                             TextSendMessage(text="何日後までの予定を表示しますか？\n例：5")
                         )
-                    elif data[0] == "#today_schedeule":
+                    elif data[0] == "#today_schedule":
                         credentials = api_manager.get_credentials(talk_id)
                         service = api_manager.build_service(credentials)
                         days = 0
@@ -265,8 +268,8 @@ def handle(handler, body, signature):
                         credentials = api_manager.get_credentials(talk_id)
                         service = api_manager.build_service(credentials)
                         days = 7
-                        events = api_manager.get_events_after_n_days(service, days)
-                        reply_text = '明日の予定'
+                        events = api_manager.get_n_days_events(service, days)
+                        reply_text = '1週間後までの予定'
                         reply_text = generate_message_from_events(events, reply_text)
                         line_bot_api.reply_message(
                             event.reply_token,
