@@ -16,7 +16,7 @@ from linebot.models import (
     PostbackEvent, StickerSendMessage)
 
 from smart_schedule.line.module import (
-    exit_confirm, post_carousel, get_join_contents_buttons
+    exit_confirm, post_carousel, get_group_menu_buttons
 )
 from smart_schedule.settings import line_env
 from smart_schedule.settings import web_env
@@ -24,7 +24,7 @@ from smart_schedule.settings import hash_env
 from smart_schedule.google_calendar import api_manager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from smart_schedule.models import Personal
+from smart_schedule.models import Personal, GroupUser, FreeDay
 from smart_schedule.settings import db_env
 
 app = Flask(__name__)
@@ -55,6 +55,35 @@ def handle(handler, body, signature):
         service = api_manager.build_service(credentials)
 
         time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # メニューを表示する
+        if event.message.text == "#menu":
+            post_carousel(event.reply_token)
+            return -1
+
+        # グループのメニューを表示する
+        if event.message.text == "Gmenu" and not event.source.type == "user":
+            buttons_template_message = TemplateSendMessage(
+                alt_text='Button template',
+                template=get_group_menu_buttons(time)
+            )
+            line_bot_api.reply_message(
+                event.reply_token,
+                buttons_template_message
+            )
+            return -1
+
+        # 退出の確認を表示
+        if event.message.text == "退出" and not event.source.type == "user":
+            confirm_message = TemplateSendMessage(
+                alt_text='Confirm template',
+                template=exit_confirm(time)
+            )
+            line_bot_api.reply_message(
+                event.reply_token,
+                confirm_message
+            )
+            return -1
 
         # DBにアクセスし、セッションを開始
         engine = create_engine(db_env['database_url'])
@@ -90,49 +119,44 @@ def handle(handler, body, signature):
                 keyword = event.message.text
                 events = api_manager.get_events_by_title(service, keyword)
                 reply_text = '{}の検索結果'.format(keyword)
-                reply_text = generate_message_from_events(events, reply_text)
+                reply_text += generate_message_from_events(events, reply_text)
+
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text=reply_text)
+                )
+                return -1
+            # グループでのメンバー登録
+            if event.message.text.startswith("メンバー登録 ") and not event.source.type == 'user':
+                username = event.message.text.split(maxsplit=1)[1]
+                session.add(GroupUser(name=username, group_id=person.id))
+                reply_text = '{}をグループのメンバーに登録しました'.format(username)
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text=reply_text)
                 )
                 return -1
 
-        if event.message.text == "#menu":
-            post_carousel(event.reply_token)
-            return -1
-        if not event.message.text.startswith("予定 "):
-            if event.message.text.startswith("大好き"):
-                reply_text = "大好きだよ！！！".format(event.message.text)
-            elif event.message.text.startswith("退出") and not event.source.type == "user":
-                confirm_message = TemplateSendMessage(
-                    alt_text='Confirm template',
-                    template=exit_confirm(time)
-                )
-                line_bot_api.reply_message(
-                    event.reply_token,
-                    confirm_message
-                )
-                return -1
-            else:
-                reply_text = event.message.text
-
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=reply_text)
-            )
-            return -1
-
-        schedule_name = event.message.text.split(maxsplit=1)[1]
-        buttons_template_message = TemplateSendMessage(
-            alt_text='Buttons template',
-            template=get_join_contents_buttons(schedule_name, time)
-        )
-        print(buttons_template_message)
-        # text_send_message = TextSendMessage(text=reply_text)
-        line_bot_api.reply_message(
-            event.reply_token,
-            buttons_template_message
-        )
+            if person.adjust_flag:
+                # グループの予定調整を終了
+                if event.message.text == "OK!!":
+                    person.adjust_flag = False
+                    return -1
+                group_member = session.query(GroupUser).filter(GroupUser.group_id == person.id).all()
+                # グループのメンバーをシステムに登録していなかった場合
+                if len(group_member) == 0:
+                    reply_text = 'グループのメンバーを登録してください\n例：メンバー登録 橋本'
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        TextSendMessage(text=reply_text)
+                    )
+                    return -1
+                data = event.message.text.split(' ')
+                if len(data) <= 1:
+                    return -1
+                name = data[0]
+                days = data[1]
+                date = days.split(',')
 
     @handler.add(PostbackEvent)
     def handle_postback(event):
@@ -176,6 +200,13 @@ def handle(handler, body, signature):
                     event.reply_token,
                     TextSendMessage(text="退出をキャンセルします。")
                 )
+            elif data[0] == "#g-calender":
+                post_carousel(event.reply_token)
+            elif data[0] == "#register":
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text='メンバー登録の仕方\n例：メンバー登録 橋本')
+                )
             else:
                 # DBにアクセスし、セッションを開始
                 engine = create_engine(db_env['database_url'])
@@ -200,6 +231,68 @@ def handle(handler, body, signature):
                             event.reply_token,
                             TextSendMessage(text="何日後までの予定を表示しますか？\n例：5")
                         )
+                    elif data[0] == "#today_schedule":
+                        credentials = api_manager.get_credentials(talk_id)
+                        service = api_manager.build_service(credentials)
+                        days = 0
+                        events = api_manager.get_events_after_n_days(service, days)
+                        reply_text = '今日の予定'
+                        reply_text = generate_message_from_events(events, reply_text)
+                        line_bot_api.reply_message(
+                            event.reply_token,
+                            TextSendMessage(text=reply_text)
+                        )
+                    elif data[0] == "#tomorrow_schedule":
+                        credentials = api_manager.get_credentials(talk_id)
+                        service = api_manager.build_service(credentials)
+                        days = 1
+                        events = api_manager.get_events_after_n_days(service, days)
+                        reply_text = '明日の予定'
+                        reply_text = generate_message_from_events(events, reply_text)
+                        line_bot_api.reply_message(
+                            event.reply_token,
+                            TextSendMessage(text=reply_text)
+                        )
+                    elif data[0] == "#7days_schedule":
+                        credentials = api_manager.get_credentials(talk_id)
+                        service = api_manager.build_service(credentials)
+                        days = 7
+                        events = api_manager.get_n_days_events(service, days)
+                        reply_text = '1週間後までの予定'
+                        reply_text = generate_message_from_events(events, reply_text)
+                        line_bot_api.reply_message(
+                            event.reply_token,
+                            TextSendMessage(text=reply_text)
+                        )
+                    # グループメンバー一覧を表示
+                    elif data[0] == "#member":
+                        members = session.query(GroupUser).filter(GroupUser.group_id == person.id).all()
+                        print(members)
+                        reply_text = '登録されているメンバー一覧\n'
+                        for e in members:
+                            reply_text += e.name
+                            reply_text += '\n'
+                        line_bot_api.reply_message(
+                            event.reply_token,
+                            TextSendMessage(text=reply_text)
+                        )
+                    # 調整機能の呼び出し
+                    elif data[0] == "#adjust":
+                        members = session.query(GroupUser).filter(GroupUser.group_id == person.id).all()
+                        # グループのメンバーをシステムに登録していなかった場合
+                        if len(members) == 0:
+                            reply_text = 'グループのメンバーを登録してください\n例：メンバー登録 橋本'
+                            line_bot_api.reply_message(
+                                event.reply_token,
+                                TextSendMessage(text=reply_text)
+                            )
+                            return -1
+                        person.adjust_flag = True
+                        line_bot_api.reply_message(
+                            event.reply_token,
+                            TextSendMessage(text="空いてる日を入力してください\n例：橋本 1/1,1/2,1/3,1/4\n\n※予定調整を終了する際は「OK!!」と入力してください")
+                        )
+
         else:
             line_bot_api.reply_message(
                 event.reply_token,

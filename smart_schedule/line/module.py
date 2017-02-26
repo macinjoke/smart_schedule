@@ -13,6 +13,7 @@ from smart_schedule.settings import line_env
 
 def exit_confirm(time):
     return ConfirmTemplate(
+        type="confirm",
         text="本当に退出させますか？",
         actions=[
             PostbackTemplateAction(
@@ -27,28 +28,29 @@ def exit_confirm(time):
     )
 
 
-def get_join_contents_buttons(schedule_name, time):
+def get_group_menu_buttons(time):
     return ButtonsTemplate(
         # 芝刈り機のイラスト
-        thumbnail_image_url='https://2.bp.blogspot.com/-SObo8z0Ajyw/V9ppuyMxT2I/AAAAAAAA9xI/jwNeixWhDeMJ6K_z96edB45umM6WTftVQCLcB/s800/kusakari_shibakari.png',
-        title="{} の予定".format(schedule_name),
-        text="選択してね",
+        # thumbnail_image_url='https://2.bp.blogspot.com/-SObo8z0Ajyw/V9ppuyMxT2I/AAAAAAAA9xI/jwNeixWhDeMJ6K_z96edB45umM6WTftVQCLcB/s800/kusakari_shibakari.png',
+        type="buttons",
+        title="グループメニュー",
+        text="機能を選択してください",
         actions=[
             PostbackTemplateAction(
-                label='参加する',
-                data='join,{}'.format(time)
+                label='予定調整',
+                data='#adjust,{}'.format(time)
             ),
             PostbackTemplateAction(
-                label='参加しない',
-                data='nojoin,{}'.format(time)
+                label='グループのメンバーを登録',
+                data='#register,{}'.format(time)
             ),
-            MessageTemplateAction(
-                label='うっひょおお！！！',
-                text='うっひょおお！！！'
+            PostbackTemplateAction(
+                label='グループに登録されているメンバーを表示',
+                data='#member,{}'.format(time)
             ),
-            URITemplateAction(
-                label='uri',
-                uri='http://example.com/'
+            PostbackTemplateAction(
+                label='グループのカレンダーメニューを表示',
+                data='#g-calender,{}'.format(time)
             )
         ]
     )
@@ -99,19 +101,19 @@ def post_carousel(reply_token):
                                 "text": "選択してください",
                                 "actions": [
                                     {
-                                        "type": "uri",
-                                        "label": "詳細を見る",
-                                        "uri": "http://example.com"
+                                        "type": "postback",
+                                        "label": "今日の予定を表示",
+                                        "data": "#today_schedule,{}".format(time)
                                     },
                                     {
-                                        "type": "uri",
-                                        "label": "詳細を見る",
-                                        "uri": "http://example.com"
+                                        "type": "postback",
+                                        "label": "明日の予定を表示",
+                                        "data": "#tomorrow_schedule,{}".format(time)
                                     },
                                     {
-                                        "type": "uri",
-                                        "label": "詳細を見る",
-                                        "uri": "http://example.com"
+                                        "type": "postback",
+                                        "label": "1週間後までの予定を表示",
+                                        "data": "#7days_schedule,{}".format(time)
                                     },
                                 ]
                             },
