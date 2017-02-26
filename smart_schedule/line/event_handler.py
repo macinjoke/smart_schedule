@@ -63,7 +63,7 @@ def handle(handler, body, signature):
 
         # グループのメニューを表示する
         if event.message.text == "Gmenu" and not event.source.type == "user":
-            buttons_template_message = TextSendMessage(
+            buttons_template_message = TemplateSendMessage(
                 alt_text='Button template',
                 template=get_join_contents_buttons(time=time)
             )
