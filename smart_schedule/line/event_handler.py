@@ -240,7 +240,7 @@ def handle(handler, body, signature):
                             TextSendMessage(text="何日後までの予定を表示しますか？\n例：5")
                         )
                     elif data[0] == "#today_schedeule":
-                        credentials = api_manager.get_credentials(line_env['user_id'])
+                        credentials = api_manager.get_credentials(talk_id)
                         service = api_manager.build_service(credentials)
                         days = 0
                         events = api_manager.get_events_after_n_days(service, days)
@@ -251,7 +251,7 @@ def handle(handler, body, signature):
                             TextSendMessage(text=reply_text)
                         )
                     elif data[0] == "#tomorrow_schedule":
-                        credentials = api_manager.get_credentials(line_env['user_id'])
+                        credentials = api_manager.get_credentials(talk_id)
                         service = api_manager.build_service(credentials)
                         days = 1
                         events = api_manager.get_events_after_n_days(service, days)
@@ -262,7 +262,7 @@ def handle(handler, body, signature):
                             TextSendMessage(text=reply_text)
                         )
                     elif data[0] == "#7days_schedule":
-                        credentials = api_manager.get_credentials(line_env['user_id'])
+                        credentials = api_manager.get_credentials(talk_id)
                         service = api_manager.build_service(credentials)
                         days = 7
                         events = api_manager.get_events_after_n_days(service, days)
