@@ -277,9 +277,9 @@ def handle(handler, body, signature):
                         )
                     # グループメンバー一覧を表示
                     elif data[0] == "#member":
-                        member = session.query(GroupUser).filter(GroupUser.group_id == talk_id)
+                        members = session.query(GroupUser).filter(GroupUser.group_id == talk_id).all()
                         reply_text = '登録されているメンバー一覧\n'
-                        for e in member:
+                        for e in members:
                             reply_text += e + '\n'
                     # 調整機能の呼び出し
                     elif data[0] == "#adjust":
