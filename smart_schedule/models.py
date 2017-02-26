@@ -19,6 +19,7 @@ class Personal(db.Model):
     up_to_day_flag = Column(Boolean)
     day_flag = Column(Boolean)
     keyword_flag = Column(Boolean)
+    adjust_flag = Column(Boolean)
     users = relationship("GroupUser")
 
     # 生成された時に呼び出される
@@ -28,6 +29,7 @@ class Personal(db.Model):
         self.up_to_day_flag = False
         self.day_flag = False
         self.keyword_flag = False
+        self.adjust_flag = False
 
 
 class GroupUser(db.Model):

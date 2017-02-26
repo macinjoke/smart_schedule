@@ -24,7 +24,7 @@ from smart_schedule.settings import hash_env
 from smart_schedule.google_calendar import api_manager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from smart_schedule.models import Personal
+from smart_schedule.models import Personal, GroupUser, FreeDay
 from smart_schedule.settings import db_env
 
 app = Flask(__name__)
@@ -124,14 +124,34 @@ def handle(handler, body, signature):
                     TextSendMessage(text=reply_text)
                 )
                 return -1
+            # グループでのメンバー登録
+            if event.message.text.startswith("メンバー登録 ") and not event.source.type == 'user':
+                username = event.message.text.split(maxsplit=1)[1]
+                session.add(GroupUser(name=username, group_id=talk_id))
+                reply_text = '{}をグループのメンバーに登録しました'.format(username)
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text=reply_text)
+                )
+                return -1
 
             if person.adjust_flag:
                 # グループの予定調整を終了
                 if event.message.text == "OK!!":
                     person.adjust_flag = False
                     return -1
-
+                group_member = session.query(GroupUser).filter(GroupUser.group_id == talk_id)
+                # グループのメンバーをシステムに登録していなかった場合
+                if len(group_member) == 0:
+                    reply_text = 'グループのメンバーを登録してください\n例：メンバー登録 橋本'
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        TextSendMessage(text=reply_text)
+                    )
+                    return -1
                 data = event.message.text.split(' ')
+                if len(data) <= 1:
+                    return -1
                 name = data[0]
                 days = data[1]
                 date = days.split(',')
@@ -190,13 +210,13 @@ def handle(handler, body, signature):
                     event.reply_token,
                     TextSendMessage(text="退出をキャンセルします。")
                 )
-            elif data[0] == "adjust":
+            elif data[0] == "#g-calender":
+                post_carousel(event.reply_token)
+            elif data[0] == "#register":
                 line_bot_api.reply_message(
                     event.reply_token,
-                    TextSendMessage(text="空いてる日を入力してください\n例：橋本 1/1,1/2,1/3,1/4")
+                    TextSendMessage(text='メンバー登録の仕方\n例：メンバー登録 橋本')
                 )
-            elif data[0] == "g-calender":
-                post_carousel(event.reply_token)
             else:
                 # DBにアクセスし、セッションを開始
                 engine = create_engine(db_env['database_url'])
@@ -221,7 +241,7 @@ def handle(handler, body, signature):
                             event.reply_token,
                             TextSendMessage(text="何日後までの予定を表示しますか？\n例：5")
                         )
-                    elif data[0] == "today_schedeule":
+                    elif data[0] == "#today_schedeule":
                         credentials = api_manager.get_credentials(line_env['user_id'])
                         service = api_manager.build_service(credentials)
                         days = 0
@@ -253,6 +273,19 @@ def handle(handler, body, signature):
                         line_bot_api.reply_message(
                             event.reply_token,
                             TextSendMessage(text=reply_text)
+                        )
+                    # グループメンバー一覧を表示
+                    elif data[0] == "#member":
+                        member = session.query(GroupUser).filter(GroupUser.group_id == talk_id)
+                        reply_text = '登録されているメンバー一覧\n'
+                        for e in member:
+                            reply_text += e + '\n'
+                    # 調整機能の呼び出し
+                    elif data[0] == "#adjust":
+                        person.adjust_flag = True
+                        line_bot_api.reply_message(
+                            event.reply_token,
+                            TextSendMessage(text="空いてる日を入力してください\n例：橋本 1/1,1/2,1/3,1/4\n予定調整を終了する際は「OK!!」と入力してください")
                         )
 
         else:

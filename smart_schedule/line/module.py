@@ -36,11 +36,19 @@ def get_join_contents_buttons(schedule_name, time):
         actions=[
             PostbackTemplateAction(
                 label='予定調整',
-                data='adjust,{}'.format(time)
+                data='#adjust,{}'.format(time)
+            ),
+            PostbackTemplateAction(
+                label='グループのメンバーを登録',
+                data='#register,{}'.format(time)
+            ),
+            PostbackTemplateAction(
+                label='グループに登録されているメンバーを表示',
+                data='#member,{}'.format(time)
             ),
             PostbackTemplateAction(
                 label='グループのカレンダーメニューを表示',
-                data='g-calender,{}'.format(time)
+                data='#g-calender,{}'.format(time)
             )
         ]
     )
