@@ -180,6 +180,12 @@ def handle(handler, body, signature):
         pre_time = datetime.strptime(data[1],'%Y-%m-%d %H:%M:%S')
         compare = datetime.now()-pre_time
         print(compare)
+
+        credentials = api_manager.get_credentials(talk_id)
+        if credentials is None:
+            google_auth_message(event)
+            return
+        service = api_manager.build_service(credentials)
         if compare.total_seconds() < TIME_OUT_SECONDS:
             if data[0] == "yes" and event.source.type == "group":
                 try:
@@ -237,8 +243,6 @@ def handle(handler, body, signature):
                             TextSendMessage(text="何日後までの予定を表示しますか？\n例：5")
                         )
                     elif data[0] == "#today_schedule":
-                        credentials = api_manager.get_credentials(talk_id)
-                        service = api_manager.build_service(credentials)
                         days = 0
                         events = api_manager.get_events_after_n_days(service, days)
                         reply_text = '今日の予定'
@@ -248,8 +252,6 @@ def handle(handler, body, signature):
                             TextSendMessage(text=reply_text)
                         )
                     elif data[0] == "#tomorrow_schedule":
-                        credentials = api_manager.get_credentials(talk_id)
-                        service = api_manager.build_service(credentials)
                         days = 1
                         events = api_manager.get_events_after_n_days(service, days)
                         reply_text = '明日の予定'
@@ -259,8 +261,6 @@ def handle(handler, body, signature):
                             TextSendMessage(text=reply_text)
                         )
                     elif data[0] == "#7days_schedule":
-                        credentials = api_manager.get_credentials(talk_id)
-                        service = api_manager.build_service(credentials)
                         days = 7
                         events = api_manager.get_n_days_events(service, days)
                         reply_text = '1週間後までの予定'
