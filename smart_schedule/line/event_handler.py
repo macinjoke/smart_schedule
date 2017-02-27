@@ -217,7 +217,7 @@ def handle(handler, body, signature):
         data = event.postback.data.split(',')
         print(data)
         print(data[1])
-        pre_time = datetime.strptime(data[1],'%Y-%m-%d %H:%M:%S')
+        pre_time = datetime.strptime(data[-1], '%Y-%m-%d %H:%M:%S')
         compare = datetime.now()-pre_time
         print(compare)
 
@@ -257,6 +257,19 @@ def handle(handler, body, signature):
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text='メンバー登録の仕方\n例：メンバー登録 橋本')
+                )
+            elif data[0] == "#create-calendar":
+                created_datetime = datetime.strptime(data[1], '%m/%d')
+                # TODO 2017
+                created_date = date(2017, created_datetime.month, created_datetime.day)
+                title = 'Smart Scheduleからの予定'
+                calendar_event = api_manager.create_event(service, created_date, title)
+                reply_text = '{}月{}日の予定を作成しました\n{}'.format(
+                    created_date.month, created_date.day, calendar_event.get('htmlLink')
+                )
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text=reply_text)
                 )
             else:
                 # DBにアクセスし、セッションを開始
