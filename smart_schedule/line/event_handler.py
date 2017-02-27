@@ -326,8 +326,6 @@ def generate_message_from_events(events, reply_text):
     for e in events:
         summary = e['summary']
         start = e['start'].get('dateTime', e['start'].get('date'))
-        print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
-        print(start)
         if re.match('\d+[-]\d+[-]\d+[T]\d+[:]\d+[:]\d+[+]\d+[:]\d+', start):
             start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
             start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
