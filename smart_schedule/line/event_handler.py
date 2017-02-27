@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
+from datetime import datetime, date
 import re
+from collections import OrderedDict, Counter
 import flask
 from flask import Flask
 import urllib
@@ -18,7 +19,7 @@ from linebot.models import (
     PostbackEvent, StickerSendMessage)
 
 from smart_schedule.line.module import (
-    exit_confirm, post_carousel, get_group_menu_buttons
+    exit_confirm, post_carousel, get_group_menu_buttons, get_event_create_buttons
 )
 from smart_schedule.settings import line_env
 from smart_schedule.settings import web_env
@@ -143,25 +144,64 @@ def handle(handler, body, signature):
                 return -1
 
             if person.adjust_flag:
-                # グループの予定調整を終了
-                if event.message.text == "OK!!":
-                    person.adjust_flag = False
-                    return -1
-                group_member = session.query(GroupUser).filter(GroupUser.group_id == person.id).all()
+                group_users = session.query(GroupUser).filter(GroupUser.group_id == person.id).all()
                 # グループのメンバーをシステムに登録していなかった場合
-                if len(group_member) == 0:
+                if len(group_users) == 0:
                     reply_text = 'グループのメンバーを登録してください\n例：メンバー登録 橋本'
                     line_bot_api.reply_message(
                         event.reply_token,
                         TextSendMessage(text=reply_text)
                     )
+                    person.adjust_flag = False
                     return -1
-                data = event.message.text.split(' ')
-                if len(data) <= 1:
+
+                # グループの予定調整を終了
+                if event.message.text == "end":
+                    reply_text = '空いている日'
+                    dates = []
+                    for group_user in group_users:
+                        dates.extend([free_day.date for free_day in group_user.free_days])
+                    date_count_dict = OrderedDict(sorted(Counter(dates).items(), key=lambda x: x[0]))
+                    for i, dic in enumerate(date_count_dict.items()):
+                        d, count = dic
+                        if i % 3 == 0:
+                            reply_text += '\n'
+                        else:
+                            reply_text += ', '
+                        reply_text += '{}/{} {}人'.format(d.month, d.day, count)
+
+                    best_date_count = max(date_count_dict.values())
+                    best_dates = [k for k, v in date_count_dict.items() if v == best_date_count]
+                    reply_text += '\n最も空いている日の中からGoogle Calendarに予定を作成できます。日にちを選んでください。'
+                    print(len(reply_text))
+                    buttons_template_message = TemplateSendMessage(
+                        alt_text='Button template',
+                        # TODO ボタンテンプレートが4つしか受け付けないので4つしか選べない
+                        template=get_event_create_buttons(time, reply_text, best_dates[:4])
+                    )
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        buttons_template_message
+                    )
+                    person.adjust_flag = False
                     return -1
-                name = data[0]
-                days = data[1]
-                date = days.split(',')
+
+                user_names = tuple(group_user.name for group_user in group_users)
+                if event.message.text.startswith(user_names):
+                    split_message = event.message.text.split()
+                    name = split_message[0]
+                    group_user = [group_user for group_user in group_users if group_user.name == name][0]
+                    day_strs = split_message[1:]
+                    datetimes = [datetime.strptime(day_str, '%m/%d') for day_str in day_strs]
+                    # TODO 2017 にしちゃってるけどどうにかしないと1年後使えねえや笑
+                    dates = [date(2017, datetime.month, datetime.day) for datetime in datetimes]
+                    free_days = [FreeDay(date, group_user.id) for date in dates]
+                    session.add_all(free_days)
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        TextSendMessage(text='空いている日を保存したよ')
+                    )
+                    return -1
 
     @handler.add(PostbackEvent)
     def handle_postback(event):
