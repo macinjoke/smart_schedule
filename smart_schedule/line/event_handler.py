@@ -293,9 +293,28 @@ def handle(handler, body, signature):
                             )
                             return -1
                         person.adjust_flag = True
+                        reply_text = "空いてる日を入力してください\n例：橋本 1/1 1/2 1/3 1/4\n\n※予定調整を終了する際は「end」と入力してください\n--------------------------------"
+                        for member in members:
+                            if len(member.free_days) != 0:
+                                break
+                        else:
+                            reply_text += '\n\n現在、空いている日は登録されていません'
+                            line_bot_api.reply_message(
+                                event.reply_token,
+                                TextSendMessage(text=reply_text)
+                            )
+                            return -1
+
+                        reply_text += '\n\n現在の空いている日\n'
+                        dates = []
+                        for member in members:
+                            dates.extend([free_day.date for free_day in member.free_days])
+                        date_count_dict = OrderedDict(sorted(Counter(dates).items(), key=lambda x: x[0]))
+                        for d, count in date_count_dict.items():
+                            reply_text += '\n{}/{} {}票'.format(d.month, d.day, count)
                         line_bot_api.reply_message(
                             event.reply_token,
-                            TextSendMessage(text="空いてる日を入力してください\n例：橋本 1/1,1/2,1/3,1/4\n\n※予定調整を終了する際は「OK!!」と入力してください")
+                            TextSendMessage(text=reply_text)
                         )
 
         else:
