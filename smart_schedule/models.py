@@ -57,5 +57,5 @@ class FreeDay(db.Model):
     user_id = Column(Integer, ForeignKey('group_user.id'))
 
     def __init__(self, date, user_id):
-        self.data = date
+        self.date = date
         self.user_id = user_id
