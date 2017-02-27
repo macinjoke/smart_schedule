@@ -56,6 +56,20 @@ def get_group_menu_buttons(time):
     )
 
 
+def get_event_create_buttons(time, text, dates):
+    actions = [
+        PostbackTemplateAction(
+            label="{}/{}".format(date.month, date.day),
+            data="#create-calendar,{}/{},{}".format(date.month, date.day, time)
+        ) for date in dates
+    ]
+    return ButtonsTemplate(
+        type="buttons",
+        text=text,
+        actions=actions
+    )
+
+
 def post_carousel(reply_token):
     time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     header = {
