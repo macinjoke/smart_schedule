@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from datetime import datetime
+import re
 import flask
 from flask import Flask
 import urllib
@@ -65,7 +66,8 @@ def handle(handler, body, signature):
             return -1
 
         # グループのメニューを表示する
-        if event.message.text == "Gmenu" and not event.source.type == "user":
+        pattern = r'(ss|smart[\s_-]?schedule|スマートスケジュール)$'
+        if re.match(pattern, event.message.text, re.IGNORECASE) and not event.source.type == "user":
             buttons_template_message = TemplateSendMessage(
                 alt_text='Button template',
                 template=get_group_menu_buttons(time)
