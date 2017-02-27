@@ -5,6 +5,7 @@ import flask
 from flask import Flask
 import urllib
 import hashlib
+import re
 from linebot import (
     LineBotApi
 )
@@ -325,12 +326,20 @@ def generate_message_from_events(events, reply_text):
     for e in events:
         summary = e['summary']
         start = e['start'].get('dateTime', e['start'].get('date'))
-        start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
-        start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
-        end = e['end'].get('dateTime', e['end'].get('date'))
-        end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
-        end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
-        reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary,
-                                                                                               start,
-                                                                                               end)
+        if re.match('\d+[-]\d+[-]\d+[T]\d+[:]\d+[:]\d+[+]\d+[:]\d+', start):
+            start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
+            start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
+            end = e['end'].get('dateTime', e['end'].get('date'))
+            end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
+            end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
+            reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary,
+                                                                                                   start,
+                                                                                                   end)
+        else:
+            start_datetime = datetime.strptime(start, '%Y-%m-%d')
+            start = start_datetime.strftime('%Y年%m月%d日')
+            end = '終日'
+            reply_text += '\n\n{}\n{} {}\n\n---------------------------'.format(summary,
+                                                                                start,
+                                                                                end)
     return reply_text
