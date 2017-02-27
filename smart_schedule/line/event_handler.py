@@ -32,6 +32,8 @@ app = Flask(__name__)
 
 line_bot_api = LineBotApi(line_env['channel_access_token'])
 
+TIME_OUT_SECONDS = 100
+
 
 def handle(handler, body, signature):
     handler.handle(body, signature)
@@ -176,7 +178,7 @@ def handle(handler, body, signature):
         pre_time = datetime.strptime(data[1],'%Y-%m-%d %H:%M:%S')
         compare = datetime.now()-pre_time
         print(compare)
-        if compare.total_seconds() < 20:
+        if compare.total_seconds() < TIME_OUT_SECONDS:
             if data[0] == "yes" and event.source.type == "group":
                 try:
                     line_bot_api.reply_message(
