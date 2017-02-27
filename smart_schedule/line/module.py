@@ -45,11 +45,11 @@ def get_group_menu_buttons(time):
                 data='#register,{}'.format(time)
             ),
             PostbackTemplateAction(
-                label='グループに登録されているメンバーを表示',
+                label='登録済みメンバーを表示',
                 data='#member,{}'.format(time)
             ),
             PostbackTemplateAction(
-                label='グループのカレンダーメニューを表示',
+                label='予定確認',
                 data='#g-calender,{}'.format(time)
             )
         ]
