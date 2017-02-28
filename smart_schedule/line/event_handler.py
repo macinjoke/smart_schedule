@@ -197,7 +197,7 @@ def handle(handler, body, signature):
                     session.add_all(free_days)
                     line_bot_api.reply_message(
                         event.reply_token,
-                        TextSendMessage(text='空いている日を保存したよ')
+                        TextSendMessage(text='空いている日を保存しました')
                     )
                     return -1
 
