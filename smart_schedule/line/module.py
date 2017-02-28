@@ -34,7 +34,7 @@ def get_group_menu_buttons(time):
         # thumbnail_image_url='https://2.bp.blogspot.com/-SObo8z0Ajyw/V9ppuyMxT2I/AAAAAAAA9xI/jwNeixWhDeMJ6K_z96edB45umM6WTftVQCLcB/s800/kusakari_shibakari.png',
         type="buttons",
         title="グループメニュー",
-        text="機能を選択してください",
+        text="機能を選択してください\nまた、カレンダーを選択するには select と入力してください",
         actions=[
             PostbackTemplateAction(
                 label='予定調整',
