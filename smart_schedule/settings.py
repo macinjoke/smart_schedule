@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from flask import Flask
 from flask_session import Session
 from smart_schedule.models import db
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 
 APP_ROOT = os.path.dirname(__file__)
@@ -46,3 +48,6 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 Session(app)
 db.init_app(app)
 db.app = app
+
+engine = engine = create_engine(db_env['database_url'])
+MySession = sessionmaker(bind=engine, autocommit=True)

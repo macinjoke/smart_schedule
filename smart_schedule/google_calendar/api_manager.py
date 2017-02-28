@@ -4,15 +4,12 @@ import httplib2
 from apiclient import discovery
 import datetime
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from smart_schedule.models import Personal
-from smart_schedule.settings import db_env
+from smart_schedule.settings import MySession
 
 
 def get_credentials(talk_id):
-    engine = create_engine(db_env['database_url'])
-    session = sessionmaker(bind=engine, autocommit=True)()
+    session = MySession()
     with session.begin():
         personals = session.query(Personal).filter(Personal.user_id == talk_id)
     try:
@@ -22,10 +19,8 @@ def get_credentials(talk_id):
             http = credentials.authorize(httplib2.Http())
             credentials.refresh(http)
             print('リフレッシュしました')
-            session = sessionmaker(bind=engine, autocommit=True)()
-            with session.begin():
-                personal = session.query(Personal).filter_by(user_id=talk_id).one()
-                personal.credential = credentials.to_json()
+            personal = session.query(Personal).filter_by(user_id=talk_id).one()
+            personal.credential = credentials.to_json()
             print('新しい認証情報をDBに保存しました')
             return credentials
         return credentials
