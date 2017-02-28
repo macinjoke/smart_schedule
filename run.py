@@ -92,8 +92,11 @@ def oauth2callback():
     engine = create_engine(db_env['database_url'])
     session = sessionmaker(bind=engine, autocommit=True)()
     with session.begin():
-        session.add(Personal(user_id=talk_id, credential=credentials.to_json()))
-    return 'あなたのLineとGoogleカレンダーが正常に紐付けられました。'
+        if session.query(Personal).filter(Personal.user_id == talk_id).one_or_none() is None:
+            session.add(Personal(user_id=talk_id, credential=credentials.to_json()))
+            return 'あなたのLineとGoogleカレンダーが正常に紐付けられました。'
+        else:
+            return '既にグループにGoogleアカウントが紐付けられています'
 
 
 if __name__ == "__main__":
