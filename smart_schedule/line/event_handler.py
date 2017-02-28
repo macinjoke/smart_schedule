@@ -159,6 +159,9 @@ def handle(handler, body, signature):
                     dates = []
                     for group_user in group_users:
                         dates.extend([free_day.date for free_day in group_user.free_days])
+                        for free_day in group_user.free_days:
+                            session.delete(free_day)
+
                     date_count_dict = OrderedDict(sorted(Counter(dates).items(), key=lambda x: x[0]))
                     for i, dic in enumerate(date_count_dict.items()):
                         d, count = dic
