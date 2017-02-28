@@ -45,14 +45,28 @@ def get_group_menu_buttons(time):
                 data='#register,{}'.format(time)
             ),
             PostbackTemplateAction(
-                label='グループに登録されているメンバーを表示',
+                label='登録済みメンバーを表示',
                 data='#member,{}'.format(time)
             ),
             PostbackTemplateAction(
-                label='グループのカレンダーメニューを表示',
+                label='予定確認',
                 data='#g-calender,{}'.format(time)
             )
         ]
+    )
+
+
+def get_event_create_buttons(time, text, dates):
+    actions = [
+        PostbackTemplateAction(
+            label="{}/{}".format(date.month, date.day),
+            data="#create-calendar,{}/{},{}".format(date.month, date.day, time)
+        ) for date in dates
+    ]
+    return ButtonsTemplate(
+        type="buttons",
+        text=text,
+        actions=actions
     )
 
 
@@ -73,31 +87,7 @@ def post_carousel(reply_token):
                     "columns":
                         [
                             {
-                                # "thumbnailImageUrl": "https://2.bp.blogspot.com/-SObo8z0Ajyw/V9ppuyMxT2I/AAAAAAAA9xI/jwNeixWhDeMJ6K_z96edB45umM6WTftVQCLcB/s800/kusakari_shibakari.png",
-                                "title": "自分の予定を見る",
-                                "text": "選択してください",
-                                "actions":
-                                    [
-                                        {
-                                            "type": "postback",
-                                            "label": "キーワード検索",
-                                            "data": "#keyword_search,{}".format(time)
-                                        },
-                                        {
-                                            "type": "postback",
-                                            "label": "n日後の予定を表示",
-                                            "data": "#after n days_schedule,{}".format(time)
-                                        },
-                                        {
-                                            "type": "postback",
-                                            "label": "n日後までの予定を表示",
-                                            "data": "#up to n days_schedule,{}".format(time)
-                                        },
-                                    ]
-                            },
-                            {
-                                # "thumbnailImageUrl": "https://2.bp.blogspot.com/-SObo8z0Ajyw/V9ppuyMxT2I/AAAAAAAA9xI/jwNeixWhDeMJ6K_z96edB45umM6WTftVQCLcB/s800/kusakari_shibakari.png",
-                                "title": "予定を追加する",
+                                "title": "予定を見る",
                                 "text": "選択してください",
                                 "actions": [
                                     {
@@ -116,6 +106,28 @@ def post_carousel(reply_token):
                                         "data": "#7days_schedule,{}".format(time)
                                     },
                                 ]
+                            },
+                            {
+                                "title": "予定を見る",
+                                "text": "よりスマートな検索",
+                                "actions":
+                                    [
+                                        {
+                                            "type": "postback",
+                                            "label": "キーワード検索",
+                                            "data": "#keyword_search,{}".format(time)
+                                        },
+                                        {
+                                            "type": "postback",
+                                            "label": "n日後の予定を表示",
+                                            "data": "#after n days_schedule,{}".format(time)
+                                        },
+                                        {
+                                            "type": "postback",
+                                            "label": "n日後までの予定を表示",
+                                            "data": "#up to n days_schedule,{}".format(time)
+                                        },
+                                    ]
                             },
 
                         ]

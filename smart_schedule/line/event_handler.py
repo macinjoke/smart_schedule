@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
+from datetime import datetime, date
+import re
+from collections import OrderedDict, Counter
 import flask
 from flask import Flask
 import urllib
@@ -17,7 +19,7 @@ from linebot.models import (
     PostbackEvent, StickerSendMessage)
 
 from smart_schedule.line.module import (
-    exit_confirm, post_carousel, get_group_menu_buttons
+    exit_confirm, post_carousel, get_group_menu_buttons, get_event_create_buttons
 )
 from smart_schedule.settings import line_env
 from smart_schedule.settings import web_env
@@ -63,7 +65,8 @@ def handle(handler, body, signature):
             return -1
 
         # グループのメニューを表示する
-        if event.message.text == "Gmenu" and not event.source.type == "user":
+        pattern = r'(ss|smart[\s_-]?schedule|スマートスケジュール)$'
+        if re.match(pattern, event.message.text, re.IGNORECASE) and not event.source.type == "user":
             buttons_template_message = TemplateSendMessage(
                 alt_text='Button template',
                 template=get_group_menu_buttons(time)
@@ -139,25 +142,64 @@ def handle(handler, body, signature):
                 return -1
 
             if person.adjust_flag:
-                # グループの予定調整を終了
-                if event.message.text == "OK!!":
-                    person.adjust_flag = False
-                    return -1
-                group_member = session.query(GroupUser).filter(GroupUser.group_id == person.id).all()
+                group_users = session.query(GroupUser).filter(GroupUser.group_id == person.id).all()
                 # グループのメンバーをシステムに登録していなかった場合
-                if len(group_member) == 0:
+                if len(group_users) == 0:
                     reply_text = 'グループのメンバーを登録してください\n例：メンバー登録 橋本'
                     line_bot_api.reply_message(
                         event.reply_token,
                         TextSendMessage(text=reply_text)
                     )
+                    person.adjust_flag = False
                     return -1
-                data = event.message.text.split(' ')
-                if len(data) <= 1:
+
+                # グループの予定調整を終了
+                if event.message.text == "end":
+                    reply_text = '空いている日'
+                    dates = []
+                    for group_user in group_users:
+                        dates.extend([free_day.date for free_day in group_user.free_days])
+                    date_count_dict = OrderedDict(sorted(Counter(dates).items(), key=lambda x: x[0]))
+                    for i, dic in enumerate(date_count_dict.items()):
+                        d, count = dic
+                        if i % 3 == 0:
+                            reply_text += '\n'
+                        else:
+                            reply_text += ', '
+                        reply_text += '{}/{} {}人'.format(d.month, d.day, count)
+
+                    best_date_count = max(date_count_dict.values())
+                    best_dates = [k for k, v in date_count_dict.items() if v == best_date_count]
+                    reply_text += '\n最も空いている日の中からGoogle Calendarに予定を作成できます。日にちを選んでください。'
+                    print(len(reply_text))
+                    buttons_template_message = TemplateSendMessage(
+                        alt_text='Button template',
+                        # TODO ボタンテンプレートが4つしか受け付けないので4つしか選べない
+                        template=get_event_create_buttons(time, reply_text, best_dates[:4])
+                    )
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        buttons_template_message
+                    )
+                    person.adjust_flag = False
                     return -1
-                name = data[0]
-                days = data[1]
-                date = days.split(',')
+
+                user_names = tuple(group_user.name for group_user in group_users)
+                if event.message.text.startswith(user_names):
+                    split_message = event.message.text.split()
+                    name = split_message[0]
+                    group_user = [group_user for group_user in group_users if group_user.name == name][0]
+                    day_strs = split_message[1:]
+                    datetimes = [datetime.strptime(day_str, '%m/%d') for day_str in day_strs]
+                    # TODO 2017 にしちゃってるけどどうにかしないと1年後使えねえや笑
+                    dates = [date(2017, datetime.month, datetime.day) for datetime in datetimes]
+                    free_days = [FreeDay(date, group_user.id) for date in dates]
+                    session.add_all(free_days)
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        TextSendMessage(text='空いている日を保存したよ')
+                    )
+                    return -1
 
     @handler.add(PostbackEvent)
     def handle_postback(event):
@@ -173,10 +215,16 @@ def handle(handler, body, signature):
         data = event.postback.data.split(',')
         print(data)
         print(data[1])
-        pre_time = datetime.strptime(data[1],'%Y-%m-%d %H:%M:%S')
+        pre_time = datetime.strptime(data[-1], '%Y-%m-%d %H:%M:%S')
         compare = datetime.now()-pre_time
         print(compare)
-        if compare.total_seconds() < 20:
+
+        credentials = api_manager.get_credentials(talk_id)
+        if credentials is None:
+            google_auth_message(event)
+            return
+        service = api_manager.build_service(credentials)
+        if compare.total_seconds() < int(line_env['time_out_seconds']):
             if data[0] == "yes" and event.source.type == "group":
                 try:
                     line_bot_api.reply_message(
@@ -208,6 +256,19 @@ def handle(handler, body, signature):
                     event.reply_token,
                     TextSendMessage(text='メンバー登録の仕方\n例：メンバー登録 橋本')
                 )
+            elif data[0] == "#create-calendar":
+                created_datetime = datetime.strptime(data[1], '%m/%d')
+                # TODO 2017
+                created_date = date(2017, created_datetime.month, created_datetime.day)
+                title = 'Smart Scheduleからの予定'
+                calendar_event = api_manager.create_event(service, created_date, title)
+                reply_text = '{}月{}日の予定を作成しました\n{}'.format(
+                    created_date.month, created_date.day, calendar_event.get('htmlLink')
+                )
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text=reply_text)
+                )
             else:
                 # DBにアクセスし、セッションを開始
                 engine = create_engine(db_env['database_url'])
@@ -233,8 +294,6 @@ def handle(handler, body, signature):
                             TextSendMessage(text="何日後までの予定を表示しますか？\n例：5")
                         )
                     elif data[0] == "#today_schedule":
-                        credentials = api_manager.get_credentials(talk_id)
-                        service = api_manager.build_service(credentials)
                         days = 0
                         events = api_manager.get_events_after_n_days(service, days)
                         reply_text = '今日の予定'
@@ -244,8 +303,6 @@ def handle(handler, body, signature):
                             TextSendMessage(text=reply_text)
                         )
                     elif data[0] == "#tomorrow_schedule":
-                        credentials = api_manager.get_credentials(talk_id)
-                        service = api_manager.build_service(credentials)
                         days = 1
                         events = api_manager.get_events_after_n_days(service, days)
                         reply_text = '明日の予定'
@@ -255,8 +312,6 @@ def handle(handler, body, signature):
                             TextSendMessage(text=reply_text)
                         )
                     elif data[0] == "#7days_schedule":
-                        credentials = api_manager.get_credentials(talk_id)
-                        service = api_manager.build_service(credentials)
                         days = 7
                         events = api_manager.get_n_days_events(service, days)
                         reply_text = '1週間後までの予定'
@@ -289,9 +344,28 @@ def handle(handler, body, signature):
                             )
                             return -1
                         person.adjust_flag = True
+                        reply_text = "空いてる日を入力してください\n例：橋本 1/1 1/2 1/3 1/4\n\n※予定調整を終了する際は「end」と入力してください\n--------------------------------"
+                        for member in members:
+                            if len(member.free_days) != 0:
+                                break
+                        else:
+                            reply_text += '\n\n現在、空いている日は登録されていません'
+                            line_bot_api.reply_message(
+                                event.reply_token,
+                                TextSendMessage(text=reply_text)
+                            )
+                            return -1
+
+                        reply_text += '\n\n現在の空いている日\n'
+                        dates = []
+                        for member in members:
+                            dates.extend([free_day.date for free_day in member.free_days])
+                        date_count_dict = OrderedDict(sorted(Counter(dates).items(), key=lambda x: x[0]))
+                        for d, count in date_count_dict.items():
+                            reply_text += '\n{}/{} {}票'.format(d.month, d.day, count)
                         line_bot_api.reply_message(
                             event.reply_token,
-                            TextSendMessage(text="空いてる日を入力してください\n例：橋本 1/1,1/2,1/3,1/4\n\n※予定調整を終了する際は「OK!!」と入力してください")
+                            TextSendMessage(text=reply_text)
                         )
 
         else:
