@@ -123,7 +123,7 @@ def handle(handler, body, signature):
                 keyword = event.message.text
                 events = api_manager.get_events_by_title(service, keyword)
                 reply_text = '{}の検索結果'.format(keyword)
-                reply_text += generate_message_from_events(events, reply_text)
+                reply_text = generate_message_from_events(events, reply_text)
 
                 line_bot_api.reply_message(
                     event.reply_token,
