@@ -10,7 +10,7 @@ from smart_schedule.settings import MySession
 
 def get_credentials(talk_id):
     session = MySession()
-    with session.begin() as s:
+    with session.begin():
         personals = session.query(Personal).filter(Personal.user_id == talk_id)
         try:
             credentials = client.OAuth2Credentials.from_json(personals[0].credential)
