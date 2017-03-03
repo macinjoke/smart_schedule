@@ -16,10 +16,12 @@ class Personal(db.Model):
     id = Column(Integer, primary_key=True)
     user_id = Column(Unicode(255))
     credential = Column(Unicode(1200))
+    calendar_id = Column(Unicode(200))
     up_to_day_flag = Column(Boolean)
     day_flag = Column(Boolean)
     keyword_flag = Column(Boolean)
     adjust_flag = Column(Boolean)
+    calendar_select_flag = Column(Boolean)
     users = relationship("GroupUser")
 
     # 生成された時に呼び出される
@@ -30,6 +32,7 @@ class Personal(db.Model):
         self.day_flag = False
         self.keyword_flag = False
         self.adjust_flag = False
+        self.calendar_select_flag = False
 
 
 class GroupUser(db.Model):

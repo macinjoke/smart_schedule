@@ -97,7 +97,7 @@ def handle(handler, body, signature):
             if person.day_flag:
                 person.day_flag = False
                 days = int(event.message.text)
-                events = api_manager.get_events_after_n_days(service, days)
+                events = api_manager.get_events_after_n_days(service,  person.calendar_id, days)
                 reply_text = '{}日後の予定'.format(days)
                 reply_text = generate_message_from_events(events, reply_text)
                 line_bot_api.reply_message(
@@ -109,7 +109,7 @@ def handle(handler, body, signature):
             if person.up_to_day_flag:
                 person.up_to_day_flag = False
                 days = int(event.message.text)
-                events = api_manager.get_n_days_events(service, days)
+                events = api_manager.get_n_days_events(service,  person.calendar_id, days)
                 reply_text = '{}日後までの予定'.format(days)
                 reply_text = generate_message_from_events(events, reply_text)
                 line_bot_api.reply_message(
@@ -121,7 +121,7 @@ def handle(handler, body, signature):
             if person.keyword_flag:
                 person.keyword_flag = False
                 keyword = event.message.text
-                events = api_manager.get_events_by_title(service, keyword)
+                events = api_manager.get_events_by_title(service, person.calendar_id, keyword)
                 reply_text = '{}の検索結果'.format(keyword)
                 reply_text = generate_message_from_events(events, reply_text)
 
@@ -140,6 +140,38 @@ def handle(handler, body, signature):
                     TextSendMessage(text=reply_text)
                 )
                 return -1
+
+            if event.message.text == 'select':
+                calendar_list = api_manager.get_calendar_list(service)
+                reply_text = 'Google Calendar で確認できるカレンダーの一覧です。\n 文字を入力してカレンダーを選択してください'
+                for item in calendar_list['items']:
+                    reply_text += '\n- {}'.format(item['summary'])
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text=reply_text)
+                )
+                person.calendar_select_flag = True
+                return -1
+
+            if person.calendar_select_flag:
+                calendar_list = api_manager.get_calendar_list(service)
+                summaries = [item['summary'] for item in calendar_list['items']]
+                if event.message.text in summaries:
+                    person.calendar_select_flag = False
+                    calendar_id = [item['id'] for item in calendar_list['items'] if item['summary'] == event.message.text][0]
+                    person.calendar_id = calendar_id
+                    reply_text = 'カレンダーを {} に設定しました'.format(event.message.text)
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        TextSendMessage(text=reply_text)
+                    )
+                else:
+                    person.calendar_select_flag = False
+                    reply_text = '{} はカレンダーには存在しません'.format(event.message.text)
+                    line_bot_api.reply_message(
+                        event.reply_token,
+                        TextSendMessage(text=reply_text)
+                    )
 
             if person.adjust_flag:
                 group_users = session.query(GroupUser).filter(GroupUser.group_id == person.id).all()
@@ -264,7 +296,12 @@ def handle(handler, body, signature):
                 # TODO 2017
                 created_date = date(2017, created_datetime.month, created_datetime.day)
                 title = 'Smart Scheduleからの予定'
-                calendar_event = api_manager.create_event(service, created_date, title)
+                # TODO 急いでてクソコードかいた
+                engine = create_engine(db_env['database_url'])
+                session = sessionmaker(bind=engine, autocommit=True)()
+                with session.begin():
+                    person = session.query(Personal).filter(Personal.user_id == talk_id).one()
+                calendar_event = api_manager.create_event(service, person.calendar_id, created_date, title)
                 reply_text = '{}月{}日の予定を作成しました\n{}'.format(
                     created_date.month, created_date.day, calendar_event.get('htmlLink')
                 )
@@ -298,7 +335,7 @@ def handle(handler, body, signature):
                         )
                     elif data[0] == "#today_schedule":
                         days = 0
-                        events = api_manager.get_events_after_n_days(service, days)
+                        events = api_manager.get_events_after_n_days(service, person.calendar_id, days)
                         reply_text = '今日の予定'
                         reply_text = generate_message_from_events(events, reply_text)
                         line_bot_api.reply_message(
@@ -307,7 +344,7 @@ def handle(handler, body, signature):
                         )
                     elif data[0] == "#tomorrow_schedule":
                         days = 1
-                        events = api_manager.get_events_after_n_days(service, days)
+                        events = api_manager.get_events_after_n_days(service, person.calendar_id, days)
                         reply_text = '明日の予定'
                         reply_text = generate_message_from_events(events, reply_text)
                         line_bot_api.reply_message(
@@ -316,7 +353,7 @@ def handle(handler, body, signature):
                         )
                     elif data[0] == "#7days_schedule":
                         days = 7
-                        events = api_manager.get_n_days_events(service, days)
+                        events = api_manager.get_n_days_events(service, person.calendar_id, days)
                         reply_text = '1週間後までの予定'
                         reply_text = generate_message_from_events(events, reply_text)
                         line_bot_api.reply_message(
