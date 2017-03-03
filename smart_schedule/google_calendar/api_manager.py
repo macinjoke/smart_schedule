@@ -10,22 +10,22 @@ from smart_schedule.settings import MySession
 
 def get_credentials(talk_id):
     session = MySession()
-    with session.begin():
+    with session.begin() as s:
         personals = session.query(Personal).filter(Personal.user_id == talk_id)
-    try:
-        credentials = client.OAuth2Credentials.from_json(personals[0].credential)
-        if credentials.access_token_expired:
-            print('認証の期限が切れています')
-            http = credentials.authorize(httplib2.Http())
-            credentials.refresh(http)
-            print('リフレッシュしました')
-            personal = session.query(Personal).filter_by(user_id=talk_id).one()
-            personal.credential = credentials.to_json()
-            print('新しい認証情報をDBに保存しました')
+        try:
+            credentials = client.OAuth2Credentials.from_json(personals[0].credential)
+            if credentials.access_token_expired:
+                print('認証の期限が切れています')
+                http = credentials.authorize(httplib2.Http())
+                credentials.refresh(http)
+                print('リフレッシュしました')
+                personal = session.query(Personal).filter_by(user_id=talk_id).one()
+                personal.credential = credentials.to_json()
+                print('新しい認証情報をDBに保存しました')
+                return credentials
             return credentials
-        return credentials
-    except IndexError:
-        return None
+        except IndexError:
+            return None
 
 
 def build_service(credentials):
