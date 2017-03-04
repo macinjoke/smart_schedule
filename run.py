@@ -11,14 +11,12 @@ from linebot import WebhookHandler
 from linebot.exceptions import (
     InvalidSignatureError
 )
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from smart_schedule.settings import line_env
-from smart_schedule.settings import db_env
 from smart_schedule.settings import hash_env
 from smart_schedule.settings import APP_ROOT
 from smart_schedule.settings import app
+from smart_schedule.settings import MySession
 from smart_schedule.line import event_handler
 from smart_schedule.models import Personal
 
@@ -79,6 +77,7 @@ def oauth2():
 @app.route('/oauth2callback')
 def oauth2callback():
     print(flask.session)
+    session = MySession()
     if 'talk_id' not in flask.session:
         return '不正なアクセスです。'
     talk_id = flask.session.pop('talk_id')
@@ -89,11 +88,12 @@ def oauth2callback():
     flow.params['access_type'] = 'offline'
     auth_code = flask.request.args.get('code')
     credentials = flow.step2_exchange(auth_code)
-    engine = create_engine(db_env['database_url'])
-    session = sessionmaker(bind=engine, autocommit=True)()
     with session.begin():
-        session.add(Personal(user_id=talk_id, credential=credentials.to_json()))
-    return 'あなたのLineとGoogleカレンダーが正常に紐付けられました。'
+        if session.query(Personal).filter(Personal.user_id == talk_id).one_or_none() is None:
+            session.add(Personal(user_id=talk_id, credential=credentials.to_json()))
+            return 'あなたのLineとGoogleカレンダーが正常に紐付けられました。'
+        else:
+            return '既にグループにGoogleアカウントが紐付けられています'
 
 
 if __name__ == "__main__":

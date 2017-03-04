@@ -28,6 +28,7 @@ class Personal(db.Model):
     def __init__(self, user_id, credential):
         self.user_id = user_id
         self.credential = credential
+        self.calendar_id = 'primary'
         self.up_to_day_flag = False
         self.day_flag = False
         self.keyword_flag = False

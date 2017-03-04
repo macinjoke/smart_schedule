@@ -25,10 +25,8 @@ from smart_schedule.settings import line_env
 from smart_schedule.settings import web_env
 from smart_schedule.settings import hash_env
 from smart_schedule.google_calendar import api_manager
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from smart_schedule.models import Personal, GroupUser, FreeDay
-from smart_schedule.settings import db_env
+from smart_schedule.settings import MySession
 
 app = Flask(__name__)
 
@@ -41,6 +39,7 @@ def handle(handler, body, signature):
     @handler.add(MessageEvent, message=TextMessage)
     def handle_message(event):
         print(event)
+        session = MySession()
         if event.source.type == 'user':
             talk_id = event.source.user_id
         elif event.source.type == 'group':
@@ -89,9 +88,6 @@ def handle(handler, body, signature):
             )
             return -1
 
-        # DBにアクセスし、セッションを開始
-        engine = create_engine(db_env['database_url'])
-        session = sessionmaker(bind=engine, autocommit=True)()
         with session.begin():
             person = session.query(Personal).filter(Personal.user_id == talk_id).one()
             if person.day_flag:
@@ -239,6 +235,7 @@ def handle(handler, body, signature):
     @handler.add(PostbackEvent)
     def handle_postback(event):
         print("postbackevent: {}".format(event))
+        session = MySession()
         if event.source.type == 'user':
             talk_id = event.source.user_id
         elif event.source.type == 'group':
@@ -296,9 +293,6 @@ def handle(handler, body, signature):
                 # TODO 2017
                 created_date = date(2017, created_datetime.month, created_datetime.day)
                 title = 'Smart Scheduleからの予定'
-                # TODO 急いでてクソコードかいた
-                engine = create_engine(db_env['database_url'])
-                session = sessionmaker(bind=engine, autocommit=True)()
                 with session.begin():
                     person = session.query(Personal).filter(Personal.user_id == talk_id).one()
                 calendar_event = api_manager.create_event(service, person.calendar_id, created_date, title)
@@ -310,9 +304,6 @@ def handle(handler, body, signature):
                     TextSendMessage(text=reply_text)
                 )
             else:
-                # DBにアクセスし、セッションを開始
-                engine = create_engine(db_env['database_url'])
-                session = sessionmaker(bind=engine, autocommit=True)()
                 with session.begin():
                     person = session.query(Personal).filter(Personal.user_id == talk_id).one()
                     if data[0] == "#keyword_search":
