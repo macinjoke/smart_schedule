@@ -18,11 +18,28 @@ def exit_confirm(time):
         actions=[
             PostbackTemplateAction(
                 label='Yes',
-                data='yes,{}'.format(time)
+                data='exit_yes,{}'.format(time)
             ),
             PostbackTemplateAction(
                 label='No',
-                data='no,{}'.format(time)
+                data='exit_no,{}'.format(time)
+            )
+        ]
+    )
+
+
+def account_remove_confirm(time):
+    return ConfirmTemplate(
+        type="confirm",
+        text="現在認証されているアカウント連携を解除しますか？",
+        actions=[
+            PostbackTemplateAction(
+                label="Yes",
+                data="account_remove_yes,{}".format(time)
+            ),
+            PostbackTemplateAction(
+                label="No",
+                data='account_remove_no,{}'.format(time)
             )
         ]
     )
