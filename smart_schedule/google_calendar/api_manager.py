@@ -31,6 +31,17 @@ def build_service(credentials):
     return service
 
 
+def remove_account(credentials, talk_id):
+    # アカウント連携を解除
+    credentials.revoke(httplib2.Http())
+
+    # DBから削除
+    session = MySession()
+    with session.begin():
+        personal = session.query(Personal).filter_by(user_id=talk_id).one()
+        session.delete(personal)
+
+
 # 現在からn日分のイベントを取得
 def get_n_days_events(service, calendar_id, n):
     now = datetime.datetime.utcnow()

@@ -19,7 +19,7 @@ from linebot.models import (
     PostbackEvent, StickerSendMessage)
 
 from smart_schedule.line.module import (
-    exit_confirm, post_carousel, get_group_menu_buttons, get_event_create_buttons
+    exit_confirm, post_carousel, get_group_menu_buttons, get_event_create_buttons, account_remove_confirm
 )
 from smart_schedule.settings import line_env
 from smart_schedule.settings import web_env
@@ -169,6 +169,16 @@ def handle(handler, body, signature):
                         TextSendMessage(text=reply_text)
                     )
 
+            if event.message.text == 'logout':
+                confirm_message = TemplateSendMessage(
+                    alt_text='Confirm template',
+                    template=account_remove_confirm(time)
+                )
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    confirm_message
+                )
+
             if person.adjust_flag:
                 group_users = session.query(GroupUser).filter(GroupUser.group_id == person.id).all()
                 # グループのメンバーをシステムに登録していなかった場合
@@ -257,7 +267,7 @@ def handle(handler, body, signature):
             return
         service = api_manager.build_service(credentials)
         if compare.total_seconds() < int(line_env['time_out_seconds']):
-            if data[0] == "yes" and event.source.type == "group":
+            if data[0] == "exit_yes" and event.source.type == "group":
                 try:
                     line_bot_api.reply_message(
                         event.reply_token,
@@ -266,7 +276,7 @@ def handle(handler, body, signature):
                     line_bot_api.leave_group(event.source.group_id)
                 except LineBotApiError as e:
                     print(e)
-            elif data[0] == "yes" and event.source.type == "room":
+            elif data[0] == "exit_yes" and event.source.type == "room":
                 print("OK")
                 try:
                     line_bot_api.reply_message(
@@ -276,10 +286,21 @@ def handle(handler, body, signature):
                     line_bot_api.leave_room(event.source.room_id)
                 except LineBotApiError as e:
                     print(e)
-            elif data[0] == "no":
+            elif data[0] == "exit_no":
                 line_bot_api.reply_message(
                     event.reply_token,
-                    TextSendMessage(text="退出をキャンセルします。")
+                    TextSendMessage(text="退出をキャンセルしました。")
+                )
+            elif data[0] == "account_remove_yes":
+                api_manager.remove_account(credentials, talk_id)
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text='アカウント連携を解除しました。')
+                )
+            elif data[0] == "account_remove_no":
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(text="アカウント連携解除をキャンセルしました。")
                 )
             elif data[0] == "#g-calender":
                 post_carousel(event.reply_token)
