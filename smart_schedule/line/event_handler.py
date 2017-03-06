@@ -16,7 +16,7 @@ from linebot.exceptions import (
 )
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage, TemplateSendMessage,
-    PostbackEvent, StickerSendMessage, JoinEvent)
+    PostbackEvent, StickerSendMessage, JoinEvent, LeaveEvent, UnfollowEvent)
 
 from smart_schedule.line.module import (
     exit_confirm, post_carousel, get_group_menu_buttons, get_event_create_buttons, account_remove_confirm
@@ -35,6 +35,38 @@ line_bot_api = LineBotApi(line_env['channel_access_token'])
 
 def handle(handler, body, signature):
     handler.handle(body, signature)
+
+    @handler.add(JoinEvent)
+    def handle_join(event):
+        print(event)
+        join_message = 'グループに招待ありがとうございます！\n' \
+                       'グループでは「予定調整機能」「グループに登録されたカレンダーの予定確認」ができます。\n' \
+                       '詳しい使い方はアカウント紹介ページを見てください。\n' \
+                       'グループで使用できるコマンドを呼び出すメッセージは「help」と送信すると見ることができます。'
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=join_message)
+        )
+
+    @handler.add(LeaveEvent)
+    def handle_leave(event):
+        print(event)
+        talk_id = event.source.group_id
+        credentials = api_manager.get_credentials(talk_id)
+        if credentials is not None:
+            api_manager.remove_account(credentials, talk_id)
+        else:
+            print('このアカウントは認証されていません')
+
+    @handler.add(UnfollowEvent)
+    def handle_unfollow(event):
+        print(event)
+        talk_id = event.source.user_id
+        credentials = api_manager.get_credentials(talk_id)
+        if credentials is not None:
+            api_manager.remove_account(credentials, talk_id)
+        else:
+            print('このアカウントは認証されていません')
 
     @handler.add(MessageEvent, message=TextMessage)
     def handle_message(event):
