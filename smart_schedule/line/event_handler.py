@@ -55,8 +55,6 @@ def handle(handler, body, signature):
         credentials = api_manager.get_credentials(talk_id)
         if credentials is not None:
             api_manager.remove_account(credentials, talk_id)
-        else:
-            print('このアカウントは認証されていません')
 
     @handler.add(UnfollowEvent)
     def handle_unfollow(event):
@@ -65,8 +63,6 @@ def handle(handler, body, signature):
         credentials = api_manager.get_credentials(talk_id)
         if credentials is not None:
             api_manager.remove_account(credentials, talk_id)
-        else:
-            print('このアカウントは認証されていません')
 
     @handler.add(MessageEvent, message=TextMessage)
     def handle_message(event):
