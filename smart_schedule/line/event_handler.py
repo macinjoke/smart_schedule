@@ -91,6 +91,31 @@ def handle(handler, body, signature):
             )
             return -1
 
+        if event.message.text == 'help':
+            if event.source.type == 'user':
+                reply_text = '''コマンド一覧
+
+help: ヘルプを表示
+select: カレンダー選択
+logout: Google アカウントとの連携を解除
+
+詳しい使い方はアカウント紹介ページを見てください'''
+            else:
+                reply_text = '''コマンド一覧
+
+help: ヘルプを表示
+ss: グループメニューの表示
+select: カレンダー選択
+logout: Google アカウントとの連携を解除
+exit: Smart Schedule を退会させる(アカウント連携も自動的に削除されます)
+
+詳しい使い方はアカウント紹介ページを見てください'''
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=reply_text)
+            )
+            return -1
+
         # google calendar api のcredentialをDBから取得する
         credentials = api_manager.get_credentials(talk_id)
         # DBに登録されていない場合、認証URLをリプライする
