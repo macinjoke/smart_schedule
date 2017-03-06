@@ -80,6 +80,21 @@ def handle(handler, body, signature):
             talk_id = event.source.room_id
         else:
             raise Exception('invalid `event.source`')
+
+        time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # 退出の確認を表示
+        if event.message.text == "exit" and not event.source.type == "user":
+            confirm_message = TemplateSendMessage(
+                alt_text='Confirm template',
+                template=exit_confirm(time)
+            )
+            line_bot_api.reply_message(
+                event.reply_token,
+                confirm_message
+            )
+            return -1
+
         # google calendar api のcredentialをDBから取得する
         credentials = api_manager.get_credentials(talk_id)
         # DBに登録されていない場合、認証URLをリプライする
@@ -87,8 +102,6 @@ def handle(handler, body, signature):
             google_auth_message(event)
             return
         service = api_manager.build_service(credentials)
-
-        time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         # メニューを表示する
         if event.message.text == "#menu":
@@ -105,18 +118,6 @@ def handle(handler, body, signature):
             line_bot_api.reply_message(
                 event.reply_token,
                 buttons_template_message
-            )
-            return -1
-
-        # 退出の確認を表示
-        if event.message.text == "exit" and not event.source.type == "user":
-            confirm_message = TemplateSendMessage(
-                alt_text='Confirm template',
-                template=exit_confirm(time)
-            )
-            line_bot_api.reply_message(
-                event.reply_token,
-                confirm_message
             )
             return -1
 
@@ -293,19 +294,19 @@ def handle(handler, body, signature):
         compare = datetime.now()-pre_time
         print(compare)
 
-        credentials = api_manager.get_credentials(talk_id)
-        if credentials is None:
-            google_auth_message(event)
-            return
-        service = api_manager.build_service(credentials)
         if compare.total_seconds() < int(line_env['time_out_seconds']):
+            credentials = api_manager.get_credentials(talk_id)
+
             if data[0] == "exit_yes" and event.source.type == "group":
                 try:
                     line_bot_api.reply_message(
                         event.reply_token,
                         StickerSendMessage(package_id="2", sticker_id="42")
                     )
+                    if credentials is not None:
+                        api_manager.remove_account(credentials, talk_id)
                     line_bot_api.leave_group(event.source.group_id)
+                    return
                 except LineBotApiError as e:
                     print(e)
             elif data[0] == "exit_yes" and event.source.type == "room":
@@ -315,10 +316,19 @@ def handle(handler, body, signature):
                         event.reply_token,
                         StickerSendMessage(package_id="2", sticker_id="42")
                     )
+                    if credentials is not None:
+                        api_manager.remove_account(credentials, talk_id)
                     line_bot_api.leave_room(event.source.room_id)
+                    return
                 except LineBotApiError as e:
                     print(e)
-            elif data[0] == "exit_no":
+
+            if credentials is None:
+                google_auth_message(event)
+                return
+            service = api_manager.build_service(credentials)
+
+            if data[0] == "exit_no":
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text="退出をキャンセルしました。")
