@@ -39,10 +39,10 @@ def handle(handler, body, signature):
     @handler.add(JoinEvent)
     def handle_join(event):
         print(event)
-        join_message = 'グループに招待ありがとうございます！\n' \
-                       'グループでは「予定調整機能」「グループに登録されたカレンダーの予定確認」ができます。\n' \
-                       '詳しい使い方はアカウント紹介ページを見てください。\n' \
-                       'グループで使用できるコマンドを呼び出すメッセージは「help」と送信すると見ることができます。'
+        join_message = '''グループに招待ありがとうございます！
+グループでは「予定調整機能」「グループに登録されたカレンダーの予定確認」ができます。
+詳しい使い方はアカウント紹介ページを見てください。
+グループで使用できるコマンドを呼び出すメッセージは「help」と送信すると見ることができます。'''
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text=join_message)
@@ -88,6 +88,31 @@ def handle(handler, body, signature):
             line_bot_api.reply_message(
                 event.reply_token,
                 confirm_message
+            )
+            return -1
+
+        if event.message.text == 'help':
+            if event.source.type == 'user':
+                reply_text = '''コマンド一覧
+
+help: ヘルプを表示
+select: カレンダー選択
+logout: Google アカウントとの連携を解除
+
+詳しい使い方はアカウント紹介ページを見てください'''
+            else:
+                reply_text = '''コマンド一覧
+
+help: ヘルプを表示
+ss: グループメニューの表示
+select: カレンダー選択
+logout: Google アカウントとの連携を解除
+exit: Smart Schedule を退会させる(アカウント連携も自動的に削除されます)
+
+詳しい使い方はアカウント紹介ページを見てください'''
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=reply_text)
             )
             return -1
 
