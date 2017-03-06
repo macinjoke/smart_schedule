@@ -16,7 +16,7 @@ from linebot.exceptions import (
 )
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage, TemplateSendMessage,
-    PostbackEvent, StickerSendMessage)
+    PostbackEvent, StickerSendMessage, JoinEvent)
 
 from smart_schedule.line.module import (
     exit_confirm, post_carousel, get_group_menu_buttons, get_event_create_buttons, account_remove_confirm
@@ -77,7 +77,7 @@ def handle(handler, body, signature):
             return -1
 
         # 退出の確認を表示
-        if event.message.text == "退出" and not event.source.type == "user":
+        if event.message.text == "exit" and not event.source.type == "user":
             confirm_message = TemplateSendMessage(
                 alt_text='Confirm template',
                 template=exit_confirm(time)
