@@ -5,7 +5,7 @@ from apiclient import discovery
 import datetime
 
 from smart_schedule.models import Personal
-from smart_schedule.settings import MySession
+from smart_schedule.settings import MySession, REFRESH_ERROR
 
 
 def get_credentials(talk_id):
@@ -18,7 +18,13 @@ def get_credentials(talk_id):
         if credentials.access_token_expired:
             print('認証の期限が切れています')
             http = credentials.authorize(httplib2.Http())
-            credentials.refresh(http)
+            try:
+                credentials.refresh(http)
+            except client.HttpAccessTokenRefreshError:
+                print('リフレッシュエラーが起きました')
+                session.delete(personal)
+                print('ユーザーをDBから削除しました')
+                return REFRESH_ERROR
             print('リフレッシュしました')
             personal.credential = credentials.to_json()
             print('新しい認証情報をDBに保存しました')
@@ -33,7 +39,10 @@ def build_service(credentials):
 
 def remove_account(credentials, talk_id):
     # アカウント連携を解除
-    credentials.revoke(httplib2.Http())
+    try:
+        credentials.revoke(httplib2.Http())
+    except client.TokenRevokeError:
+        print('既にアカウント連携が削除されています')
 
     # DBから削除
     session = MySession()

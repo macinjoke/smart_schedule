@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from oauth2client import client
 from datetime import datetime, date
 import re
 from collections import OrderedDict, Counter
@@ -21,12 +21,11 @@ from linebot.models import (
 from smart_schedule.line.module import (
     exit_confirm, post_carousel, get_group_menu_buttons, get_event_create_buttons, account_remove_confirm
 )
-from smart_schedule.settings import line_env
-from smart_schedule.settings import web_env
-from smart_schedule.settings import hash_env
+from smart_schedule.settings import (
+    line_env, web_env, hash_env, MySession, REFRESH_ERROR
+)
 from smart_schedule.google_calendar import api_manager
 from smart_schedule.models import Personal, GroupUser, FreeDay
-from smart_schedule.settings import MySession
 
 app = Flask(__name__)
 
@@ -53,7 +52,10 @@ def handle(handler, body, signature):
         print(event)
         talk_id = event.source.group_id
         credentials = api_manager.get_credentials(talk_id)
-        if credentials is not None:
+        if credentials == REFRESH_ERROR:
+            print('リフレッシュエラーが起きたのでremove_accountを行いません')
+            return
+        elif credentials is not None:
             api_manager.remove_account(credentials, talk_id)
 
     @handler.add(UnfollowEvent)
@@ -61,7 +63,10 @@ def handle(handler, body, signature):
         print(event)
         talk_id = event.source.user_id
         credentials = api_manager.get_credentials(talk_id)
-        if credentials is not None:
+        if credentials == REFRESH_ERROR:
+            print('リフレッシュエラーが起きたのでremove_accountを行いません')
+            return
+        elif credentials is not None:
             api_manager.remove_account(credentials, talk_id)
 
     @handler.add(MessageEvent, message=TextMessage)
@@ -118,9 +123,13 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
 
         # google calendar api のcredentialをDBから取得する
         credentials = api_manager.get_credentials(talk_id)
+        # リフレッシュエラーが起きた場合、手動でアカウント連携を解除するように促すメッセージを送る
+        if credentials == REFRESH_ERROR:
+            reply_refresh_error_message(event)
+            return
         # DBに登録されていない場合、認証URLをリプライする
         if credentials is None:
-            google_auth_message(event)
+            reply_google_auth_message(event)
             return
         service = api_manager.build_service(credentials)
 
@@ -147,7 +156,12 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
             if person.day_flag:
                 person.day_flag = False
                 days = int(event.message.text)
-                events = api_manager.get_events_after_n_days(service,  person.calendar_id, days)
+                try:
+                    events = api_manager.get_events_after_n_days(service,  person.calendar_id, days)
+                except client.HttpAccessTokenRefreshError:
+                    session.delete(person)
+                    reply_invalid_credential_error_message(event)
+                    return
                 reply_text = '{}日後の予定'.format(days)
                 reply_text = generate_message_from_events(events, reply_text)
                 line_bot_api.reply_message(
@@ -159,7 +173,12 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
             if person.up_to_day_flag:
                 person.up_to_day_flag = False
                 days = int(event.message.text)
-                events = api_manager.get_n_days_events(service,  person.calendar_id, days)
+                try:
+                    events = api_manager.get_n_days_events(service,  person.calendar_id, days)
+                except client.HttpAccessTokenRefreshError:
+                    session.delete(person)
+                    reply_invalid_credential_error_message(event)
+                    return
                 reply_text = '{}日後までの予定'.format(days)
                 reply_text = generate_message_from_events(events, reply_text)
                 line_bot_api.reply_message(
@@ -171,7 +190,12 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
             if person.keyword_flag:
                 person.keyword_flag = False
                 keyword = event.message.text
-                events = api_manager.get_events_by_title(service, person.calendar_id, keyword)
+                try:
+                    events = api_manager.get_events_by_title(service, person.calendar_id, keyword)
+                except client.HttpAccessTokenRefreshError:
+                    session.delete(person)
+                    reply_invalid_credential_error_message(event)
+                    return
                 reply_text = '{}の検索結果'.format(keyword)
                 reply_text = generate_message_from_events(events, reply_text)
 
@@ -192,7 +216,12 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
                 return -1
 
             if event.message.text == 'select':
-                calendar_list = api_manager.get_calendar_list(service)
+                try:
+                    calendar_list = api_manager.get_calendar_list(service)
+                except client.HttpAccessTokenRefreshError:
+                    session.delete(person)
+                    reply_invalid_credential_error_message(event)
+                    return
                 reply_text = 'Google Calendar で確認できるカレンダーの一覧です。\n 文字を入力してカレンダーを選択してください'
                 for item in calendar_list['items']:
                     reply_text += '\n- {}'.format(item['summary'])
@@ -204,7 +233,12 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
                 return -1
 
             if person.calendar_select_flag:
-                calendar_list = api_manager.get_calendar_list(service)
+                try:
+                    calendar_list = api_manager.get_calendar_list(service)
+                except client.HttpAccessTokenRefreshError:
+                    session.delete(person)
+                    reply_invalid_credential_error_message(event)
+                    return
                 summaries = [item['summary'] for item in calendar_list['items']]
                 if event.message.text in summaries:
                     person.calendar_select_flag = False
@@ -317,6 +351,9 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
 
         if compare.total_seconds() < int(line_env['time_out_seconds']):
             credentials = api_manager.get_credentials(talk_id)
+            if credentials == REFRESH_ERROR:
+                reply_refresh_error_message(event)
+                return
 
             if data[0] == "exit_yes" and event.source.type == "group":
                 try:
@@ -345,7 +382,7 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
                     print(e)
 
             if credentials is None:
-                google_auth_message(event)
+                reply_google_auth_message(event)
                 return
             service = api_manager.build_service(credentials)
 
@@ -379,7 +416,12 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
                 title = 'Smart Scheduleからの予定'
                 with session.begin():
                     person = session.query(Personal).filter(Personal.user_id == talk_id).one()
-                calendar_event = api_manager.create_event(service, person.calendar_id, created_date, title)
+                try:
+                    calendar_event = api_manager.create_event(service, person.calendar_id, created_date, title)
+                except client.HttpAccessTokenRefreshError:
+                    session.delete(person)
+                    reply_invalid_credential_error_message(event)
+                    return
                 reply_text = '{}月{}日の予定を作成しました\n{}'.format(
                     created_date.month, created_date.day, calendar_event.get('htmlLink')
                 )
@@ -410,7 +452,12 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
                         )
                     elif data[0] == "#today_schedule":
                         days = 0
-                        events = api_manager.get_events_after_n_days(service, person.calendar_id, days)
+                        try:
+                            events = api_manager.get_events_after_n_days(service, person.calendar_id, days)
+                        except client.HttpAccessTokenRefreshError:
+                            session.delete(person)
+                            reply_invalid_credential_error_message(event)
+                            return
                         reply_text = '今日の予定'
                         reply_text = generate_message_from_events(events, reply_text)
                         line_bot_api.reply_message(
@@ -419,7 +466,12 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
                         )
                     elif data[0] == "#tomorrow_schedule":
                         days = 1
-                        events = api_manager.get_events_after_n_days(service, person.calendar_id, days)
+                        try:
+                            events = api_manager.get_events_after_n_days(service, person.calendar_id, days)
+                        except client.HttpAccessTokenRefreshError:
+                            session.delete(person)
+                            reply_invalid_credential_error_message(event)
+                            return
                         reply_text = '明日の予定'
                         reply_text = generate_message_from_events(events, reply_text)
                         line_bot_api.reply_message(
@@ -428,7 +480,12 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
                         )
                     elif data[0] == "#7days_schedule":
                         days = 7
-                        events = api_manager.get_n_days_events(service, person.calendar_id, days)
+                        try:
+                            events = api_manager.get_n_days_events(service, person.calendar_id, days)
+                        except client.HttpAccessTokenRefreshError:
+                            session.delete(person)
+                            reply_invalid_credential_error_message(event)
+                            return
                         reply_text = '1週間後までの予定'
                         reply_text = generate_message_from_events(events, reply_text)
                         line_bot_api.reply_message(
@@ -490,7 +547,7 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
             )
 
 
-def google_auth_message(event):
+def reply_google_auth_message(event):
     auth_url = flask.url_for('oauth2')
     if event.source.type == 'user':
         talk_id = event.source.user_id
@@ -508,6 +565,26 @@ def google_auth_message(event):
     line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text='このリンクから認証を行ってください\n{}'.format(url))
+    )
+
+
+def reply_refresh_error_message(event):
+    reply_text = '''認証情報の更新エラーが発生しました。同じGoogleアカウントで複数の認証を行っている場合にこの不具合が発生します。このトークでSmart Scheduleを使用したい場合は以下のいずれかを行った後で認証しなおしてください。
+
+1. 同じアカウントで認証しているトークでlogoutコマンドを行う(オススメ)
+
+2. 下記URLから手動でSmart Scheduleの認証を解除する https://myaccount.google.com/u/1/permissions'''
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text=reply_text)
+    )
+
+
+def reply_invalid_credential_error_message(event):
+    reply_text = '無効な認証情報です。同じGoogleアカウントで複数の認証を行っている場合にこの不具合が発生します。認証をやりなおしてください。'
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text=reply_text)
     )
 
 
