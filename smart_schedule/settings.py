@@ -12,6 +12,7 @@ from sqlalchemy.orm import sessionmaker
 
 APP_ROOT = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.abspath(os.path.join(APP_ROOT, '..'))
+REFRESH_ERROR = 'REFRESH_ERROR'
 
 dotenv_path = os.path.join(PROJECT_ROOT, '.env')
 if os.path.exists(dotenv_path):
