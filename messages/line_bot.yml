@@ -1,0 +1,55 @@
+
+templates:
+  exit_confirm:
+    text: 本当に退出させますか？
+    actions:
+      -
+        label: Yes
+      -
+        label: No
+  account_remove_confirm:
+    text: 現在認証されているアカウント連携を解除しますか？
+    actions:
+      -
+        label: Yes
+      -
+        label: No
+  group_menu_buttons:
+    title: グループメニュー
+    text: 機能を選択してください
+    actions:
+      -
+        label: 予定調整
+      -
+        label: グループのメンバーを登録
+      -
+        label: 登録済みメンバーを表示
+      -
+        label: 予定確認
+  event_create_buttons:
+    text: 最も空いている日の中からGoogle Calendarに予定を作成できます。日にちを選んでください。
+  schedule_search_carousel:
+    columns:
+      -
+        title: 予定を見る
+        text: 選択してください
+        actions:
+          -
+            label: 今日の予定を表示
+          -
+            label: 明日の予定を表示
+          -
+            label: 1週間後までの予定を表示
+      -
+        title: 予定を見る
+        text: よりスマートな検索
+        actions:
+          -
+            label: キーワード検索
+          -
+            label: n日後の予定を表示
+          -
+            label: n日後までの予定を表示
+
+
+
