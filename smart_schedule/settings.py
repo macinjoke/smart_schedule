@@ -23,6 +23,23 @@ dotenv_path = os.path.join(PROJECT_ROOT, '.env')
 if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
 
+google_client_secret = {
+    'web': {
+        'project_id': os.environ.get('PROJECT_ID'),
+        'client_id': os.environ.get('CLIENT_ID'),
+        'client_secret': os.environ.get('CLIENT_SECRET'),
+        'javascript_origins': [
+            os.environ.get('JAVASCRIPT_ORIGIN')
+        ],
+        'redirect_uris': [
+            os.environ.get('REDIRECT_URI')
+        ],
+        'auth_uri': os.environ.get('AUTH_URI'),
+        'token_uri': os.environ.get('TOKEN_URI'),
+        'auth_provider_x509_cert_url': os.environ.get('AUTH_PROVIDER_X509_CERT_URL'),
+    }
+}
+
 line_env = {
     'channel_access_token': os.environ.get('CHANNEL_ACCESS_TOKEN'),
     'channel_secret': os.environ.get('CHANNEL_SECRET'),
