@@ -1,7 +1,7 @@
 from linebot.models import ConfirmTemplate, PostbackTemplateAction
 
 
-class ExitConfirm(ConfirmTemplate):
+class AccountRemoveConfirm(ConfirmTemplate):
 
     def __init__(self, time, messages):
         self.id = self.__class__.__name__
@@ -16,6 +16,6 @@ class ExitConfirm(ConfirmTemplate):
                 data='{}_no,{}'.format(self.id, time)
             )
         ]
-        super(ExitConfirm, self).__init__(
+        super(AccountRemoveConfirm, self).__init__(
             text=text, actions=actions
         )
