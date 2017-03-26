@@ -2,7 +2,7 @@ from flask import Flask, request, abort
 import flask
 from flask_session import Session, SqlAlchemySessionInterface
 from flask_sqlalchemy import SQLAlchemy
-from oauth2client import client
+from oauth2client import client, clientsecrets
 import os
 import uuid
 import hashlib
@@ -12,16 +12,19 @@ from linebot.exceptions import (
     InvalidSignatureError
 )
 
-from smart_schedule.settings import line_env
-from smart_schedule.settings import hash_env
-from smart_schedule.settings import APP_ROOT
-from smart_schedule.settings import app
-from smart_schedule.settings import MySession
+from smart_schedule.settings import (
+    line_env, hash_env, google_client_secret, app, MySession
+)
 from smart_schedule.line import event_handler
 from smart_schedule.models import Personal
 
 handler = WebhookHandler(line_env['channel_secret'])
 
+# `client.flow_from_clientsecrets` 関数が引数に辞書型を取れるように
+# `clientsecrets._loadfile` 関数をオーバーライドする
+def override_loadfile(data):
+    return clientsecrets._validate_clientsecrets(data)
+clientsecrets._loadfile = override_loadfile
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -67,7 +70,7 @@ def oauth2():
     print(flask.session)
 
     flow = client.flow_from_clientsecrets(
-        os.path.join(APP_ROOT, 'client_secret.json'),
+        google_client_secret,
         scope='https://www.googleapis.com/auth/calendar',
         redirect_uri=flask.url_for('oauth2callback', _external=True))
     auth_uri = flow.step1_get_authorize_url()
@@ -82,7 +85,7 @@ def oauth2callback():
         return '不正なアクセスです。'
     talk_id = flask.session.pop('talk_id')
     flow = client.flow_from_clientsecrets(
-        os.path.join(APP_ROOT, 'client_secret.json'),
+        google_client_secret,
         scope='https://www.googleapis.com/auth/calendar',
         redirect_uri=flask.url_for('oauth2callback', _external=True))
     flow.params['access_type'] = 'offline'
