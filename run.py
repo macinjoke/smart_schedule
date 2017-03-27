@@ -1,10 +1,6 @@
-from flask import Flask, request, abort
+from flask import request, abort
 import flask
-from flask_session import Session, SqlAlchemySessionInterface
-from flask_sqlalchemy import SQLAlchemy
 from oauth2client import client, clientsecrets
-import os
-import uuid
 import hashlib
 
 from linebot import WebhookHandler
