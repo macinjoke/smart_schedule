@@ -9,18 +9,20 @@ from linebot.exceptions import (
 )
 
 from smart_schedule.settings import (
-    line_env, hash_env, google_client_secret, app, MySession
+    line_env, hash_env, google_env, app, MySession
 )
 from smart_schedule.line import event_handler
 from smart_schedule.models import Personal
 
 handler = WebhookHandler(line_env['channel_secret'])
 
-# `client.flow_from_clientsecrets` 関数が引数に辞書型を取れるように
-# `clientsecrets._loadfile` 関数をオーバーライドする
-def override_loadfile(data):
-    return clientsecrets._validate_clientsecrets(data)
-clientsecrets._loadfile = override_loadfile
+flow = client.OAuth2WebServerFlow(
+    client_id=google_env['client_id'], client_secret=google_env['client_secret'],
+    scope='https://www.googleapis.com/auth/calendar',
+    redirect_uri=google_env['redirect_uri'],
+    access_type='offline'
+)
+
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -64,11 +66,6 @@ def oauth2():
     flask.session['talk_id'] = talk_id
     print('saved session')
     print(flask.session)
-
-    flow = client.flow_from_clientsecrets(
-        google_client_secret,
-        scope='https://www.googleapis.com/auth/calendar',
-        redirect_uri=flask.url_for('oauth2callback', _external=True))
     auth_uri = flow.step1_get_authorize_url()
     return flask.redirect(auth_uri)
 
@@ -80,11 +77,6 @@ def oauth2callback():
     if 'talk_id' not in flask.session:
         return '不正なアクセスです。'
     talk_id = flask.session.pop('talk_id')
-    flow = client.flow_from_clientsecrets(
-        google_client_secret,
-        scope='https://www.googleapis.com/auth/calendar',
-        redirect_uri=flask.url_for('oauth2callback', _external=True))
-    flow.params['access_type'] = 'offline'
     auth_code = flask.request.args.get('code')
     credentials = flow.step2_exchange(auth_code)
     with session.begin():
