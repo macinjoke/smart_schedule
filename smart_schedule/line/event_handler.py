@@ -3,7 +3,6 @@ from oauth2client import client
 from datetime import datetime, date
 from collections import OrderedDict, Counter
 import flask
-from flask import Flask
 import urllib
 import hashlib
 import re
@@ -22,12 +21,10 @@ from smart_schedule.domain.line_templates import (
     AccountRemoveConfirm, EventCreateButtons, ExitConfirm, GroupMenuButtons
 )
 from smart_schedule.settings import (
-    line_env, web_env, hash_env, messages, MySession, REFRESH_ERROR
+    line_env, web_env, hash_env, messages, Session, REFRESH_ERROR
 )
 from smart_schedule.google_calendar import api_manager
 from smart_schedule.models import Personal, GroupUser, FreeDay
-
-app = Flask(__name__)
 
 line_bot_api = LineBotApi(line_env['channel_access_token'])
 
@@ -72,7 +69,7 @@ def handle(handler, body, signature):
     @handler.add(MessageEvent, message=TextMessage)
     def handle_message(event):
         print(event)
-        session = MySession()
+        session = Session()
         if event.source.type == 'user':
             talk_id = event.source.user_id
         elif event.source.type == 'group':
@@ -343,7 +340,7 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
     @handler.add(PostbackEvent)
     def handle_postback(event):
         print("postbackevent: {}".format(event))
-        session = MySession()
+        session = Session()
         if event.source.type == 'user':
             talk_id = event.source.user_id
         elif event.source.type == 'group':

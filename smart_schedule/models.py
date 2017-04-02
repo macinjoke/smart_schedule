@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Column, Integer, Unicode, UnicodeText, ForeignKey, Boolean, Date
+from sqlalchemy import Column, Integer, Unicode, ForeignKey, Boolean, Date
 from sqlalchemy.orm import relationship
-from datetime import datetime
 
 db = SQLAlchemy()
 

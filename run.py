@@ -1,6 +1,6 @@
 from flask import request, abort
 import flask
-from oauth2client import client, clientsecrets
+from oauth2client import client
 import hashlib
 
 from linebot import WebhookHandler
@@ -9,7 +9,7 @@ from linebot.exceptions import (
 )
 
 from smart_schedule.settings import (
-    line_env, hash_env, google_env, app, MySession
+    line_env, hash_env, google_env, app, Session
 )
 from smart_schedule.line import event_handler
 from smart_schedule.models import Personal
@@ -73,7 +73,7 @@ def oauth2():
 @app.route('/oauth2callback')
 def oauth2callback():
     print(flask.session)
-    session = MySession()
+    session = Session()
     if 'talk_id' not in flask.session:
         return '不正なアクセスです。'
     talk_id = flask.session.pop('talk_id')
