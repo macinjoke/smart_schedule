@@ -61,5 +61,5 @@ Session(app)
 db.init_app(app)
 db.app = app
 
-engine = engine = create_engine(db_env['database_url'])
+engine = create_engine(db_env['database_url'])
 MySession = sessionmaker(bind=engine, autocommit=True)
