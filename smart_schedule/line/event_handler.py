@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from oauth2client import client
 from datetime import datetime, date
-import re
 from collections import OrderedDict, Counter
 import flask
 from flask import Flask
@@ -18,11 +17,12 @@ from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage, TemplateSendMessage,
     PostbackEvent, StickerSendMessage, JoinEvent, LeaveEvent, UnfollowEvent)
 
-from smart_schedule.line.module import (
-    exit_confirm, post_carousel, get_group_menu_buttons, get_event_create_buttons, account_remove_confirm
+from smart_schedule.line.module import post_carousel
+from smart_schedule.domain.line_templates import (
+    AccountRemoveConfirm, EventCreateButtons, ExitConfirm, GroupMenuButtons
 )
 from smart_schedule.settings import (
-    line_env, web_env, hash_env, MySession, REFRESH_ERROR
+    line_env, web_env, hash_env, messages, MySession, REFRESH_ERROR
 )
 from smart_schedule.google_calendar import api_manager
 from smart_schedule.models import Personal, GroupUser, FreeDay
@@ -88,7 +88,7 @@ def handle(handler, body, signature):
         if event.message.text == "exit" and not event.source.type == "user":
             confirm_message = TemplateSendMessage(
                 alt_text='Confirm template',
-                template=exit_confirm(time)
+                template=ExitConfirm(time, messages['templates']['exit_confirm'])
             )
             line_bot_api.reply_message(
                 event.reply_token,
@@ -143,7 +143,10 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
         if re.match(pattern, event.message.text, re.IGNORECASE) and not event.source.type == "user":
             buttons_template_message = TemplateSendMessage(
                 alt_text='Button template',
-                template=get_group_menu_buttons(time)
+                template=GroupMenuButtons(
+                    time,
+                    messages['templates']['group_menu_buttons']
+                )
             )
             line_bot_api.reply_message(
                 event.reply_token,
@@ -260,7 +263,10 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
             if event.message.text == 'logout':
                 confirm_message = TemplateSendMessage(
                     alt_text='Confirm template',
-                    template=account_remove_confirm(time)
+                    template=AccountRemoveConfirm(
+                        time,
+                        messages['templates']['account_remove_confirm']
+                    )
                 )
                 line_bot_api.reply_message(
                     event.reply_token,
@@ -299,12 +305,16 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
 
                     best_date_count = max(date_count_dict.values())
                     best_dates = [k for k, v in date_count_dict.items() if v == best_date_count]
-                    reply_text += '\n最も空いている日の中からGoogle Calendarに予定を作成できます。日にちを選んでください。'
                     print(len(reply_text))
                     buttons_template_message = TemplateSendMessage(
                         alt_text='Button template',
                         # TODO ボタンテンプレートが4つしか受け付けないので4つしか選べない
-                        template=get_event_create_buttons(time, reply_text, best_dates[:4])
+                        template=EventCreateButtons(
+                            time,
+                            messages['templates']['event_create_buttons'],
+                            reply_text,
+                            best_dates[:4]
+                        )
                     )
                     line_bot_api.reply_message(
                         event.reply_token,
@@ -355,7 +365,7 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
                 reply_refresh_error_message(event)
                 return
 
-            if data[0] == "exit_yes" and event.source.type == "group":
+            if data[0] == "ExitConfirm_yes" and event.source.type == "group":
                 try:
                     line_bot_api.reply_message(
                         event.reply_token,
@@ -367,7 +377,7 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
                     return
                 except LineBotApiError as e:
                     print(e)
-            elif data[0] == "exit_yes" and event.source.type == "room":
+            elif data[0] == "ExitConfirm_yes" and event.source.type == "room":
                 print("OK")
                 try:
                     line_bot_api.reply_message(
@@ -386,30 +396,30 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
                 return
             service = api_manager.build_service(credentials)
 
-            if data[0] == "exit_no":
+            if data[0] == "ExitConfirm_no":
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text="退出をキャンセルしました。")
                 )
-            elif data[0] == "account_remove_yes":
+            elif data[0] == "AccountRemoveConfirm_yes":
                 api_manager.remove_account(credentials, talk_id)
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text='アカウント連携を解除しました。')
                 )
-            elif data[0] == "account_remove_no":
+            elif data[0] == "AccountRemoveConfirm_no":
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text="アカウント連携解除をキャンセルしました。")
                 )
-            elif data[0] == "#g-calender":
+            elif data[0] == "GroupMenuButtons_#g-calender":
                 post_carousel(event.reply_token)
-            elif data[0] == "#register":
+            elif data[0] == "GroupMenuButtons_#register":
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text='メンバー登録の仕方\n例：メンバー登録 橋本')
                 )
-            elif data[0] == "#create-calendar":
+            elif data[0] == "EventCreateButtons_#create-calendar":
                 created_datetime = datetime.strptime(data[1], '%m/%d')
                 # TODO 2017
                 created_date = date(2017, created_datetime.month, created_datetime.day)
@@ -493,7 +503,7 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
                             TextSendMessage(text=reply_text)
                         )
                     # グループメンバー一覧を表示
-                    elif data[0] == "#member":
+                    elif data[0] == "GroupMenuButtons_#member":
                         members = session.query(GroupUser).filter(GroupUser.group_id == person.id).all()
                         print(members)
                         reply_text = '登録されているメンバー一覧\n'
@@ -505,7 +515,7 @@ exit: Smart Schedule を退会させる(アカウント連携も自動的に削�
                             TextSendMessage(text=reply_text)
                         )
                     # 調整機能の呼び出し
-                    elif data[0] == "#adjust":
+                    elif data[0] == "GroupMenuButtons_#adjust":
                         members = session.query(GroupUser).filter(GroupUser.group_id == person.id).all()
                         # グループのメンバーをシステムに登録していなかった場合
                         if len(members) == 0:

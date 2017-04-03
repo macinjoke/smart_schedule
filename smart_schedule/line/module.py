@@ -2,89 +2,9 @@
 
 import json
 from datetime import datetime
-
 import requests
-from linebot.models import (
-    PostbackTemplateAction, MessageTemplateAction, URITemplateAction, ButtonsTemplate,
-    ConfirmTemplate)
 
 from smart_schedule.settings import line_env
-
-
-def exit_confirm(time):
-    return ConfirmTemplate(
-        type="confirm",
-        text="本当に退出させますか？",
-        actions=[
-            PostbackTemplateAction(
-                label='Yes',
-                data='exit_yes,{}'.format(time)
-            ),
-            PostbackTemplateAction(
-                label='No',
-                data='exit_no,{}'.format(time)
-            )
-        ]
-    )
-
-
-def account_remove_confirm(time):
-    return ConfirmTemplate(
-        type="confirm",
-        text="現在認証されているアカウント連携を解除しますか？",
-        actions=[
-            PostbackTemplateAction(
-                label="Yes",
-                data="account_remove_yes,{}".format(time)
-            ),
-            PostbackTemplateAction(
-                label="No",
-                data='account_remove_no,{}'.format(time)
-            )
-        ]
-    )
-
-
-def get_group_menu_buttons(time):
-    return ButtonsTemplate(
-        # 芝刈り機のイラスト
-        # thumbnail_image_url='https://2.bp.blogspot.com/-SObo8z0Ajyw/V9ppuyMxT2I/AAAAAAAA9xI/jwNeixWhDeMJ6K_z96edB45umM6WTftVQCLcB/s800/kusakari_shibakari.png',
-        type="buttons",
-        title="グループメニュー",
-        text="機能を選択してください",
-        actions=[
-            PostbackTemplateAction(
-                label='予定調整',
-                data='#adjust,{}'.format(time)
-            ),
-            PostbackTemplateAction(
-                label='グループのメンバーを登録',
-                data='#register,{}'.format(time)
-            ),
-            PostbackTemplateAction(
-                label='登録済みメンバーを表示',
-                data='#member,{}'.format(time)
-            ),
-            PostbackTemplateAction(
-                label='予定確認',
-                data='#g-calender,{}'.format(time)
-            )
-        ]
-    )
-
-
-def get_event_create_buttons(time, text, dates):
-    actions = [
-        PostbackTemplateAction(
-            label="{}/{}".format(date.month, date.day),
-            data="#create-calendar,{}/{},{}".format(date.month, date.day, time)
-        ) for date in dates
-    ]
-    return ButtonsTemplate(
-        type="buttons",
-        text=text,
-        actions=actions
-    )
 
 
 def post_carousel(reply_token):

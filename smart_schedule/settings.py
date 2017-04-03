@@ -1,6 +1,7 @@
 import os
 import uuid
 from datetime import timedelta
+import yaml
 
 from dotenv import load_dotenv
 from flask import Flask
@@ -13,6 +14,10 @@ from sqlalchemy.orm import sessionmaker
 APP_ROOT = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.abspath(os.path.join(APP_ROOT, '..'))
 REFRESH_ERROR = 'REFRESH_ERROR'
+
+messages_file = os.path.join(PROJECT_ROOT, 'messages/line_bot.yml')
+with open(messages_file) as f:
+    messages = yaml.load(f)
 
 dotenv_path = os.path.join(PROJECT_ROOT, '.env')
 if os.path.exists(dotenv_path):
