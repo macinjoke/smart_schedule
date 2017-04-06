@@ -50,4 +50,29 @@ templates:
             label: 'n日後の予定を表示'
           -
             label: 'n日後までの予定を表示'
+text_messages:
+  join_event:
+    join_message: |
+      グループに招待ありがとうございます！
+      グループでは「予定調整機能」「グループに登録されたカレンダーの予定確認」ができます。
+      詳しい使い方はアカウント紹介ページを見てください。
+      グループで使用できるコマンドを呼び出すメッセージは「help」と送信すると見ることができます。
+  message_event:
+    user_help_message: |
+      コマンド一覧
 
+      help: ヘルプを表示
+      select: カレンダー選択
+      logout: Google アカウントとの連携を解除
+
+      詳しい使い方はアカウント紹介ページを見てください
+    group_help_message: |
+      コマンド一覧
+
+      help: ヘルプを表示
+      ss: グループメニューの表示
+      select: カレンダー選択
+      logout: Google アカウントとの連携を解除
+      exit: Smart Schedule を退会させる(アカウント連携も自動的に削除されます)
+
+      詳しい使い方はアカウント紹介ページを見てください

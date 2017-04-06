@@ -23,6 +23,8 @@ from . import (
 
 
 class MessageEventHandler:
+    message_event_messages = messages['text_messages']['message_event']
+
     def __init__(self, handler):
         self.handler = handler
 
@@ -55,23 +57,9 @@ class MessageEventHandler:
 
             if event.message.text == 'help':
                 if event.source.type == 'user':
-                    reply_text = '''コマンド一覧
-
-help: ヘルプを表示
-select: カレンダー選択
-logout: Google アカウントとの連携を解除
-
-詳しい使い方はアカウント紹介ページを見てください'''
+                    reply_text = self.message_event_messages['user_help_message']
                 else:
-                    reply_text = '''コマンド一覧
-
-help: ヘルプを表示
-ss: グループメニューの表示
-select: カレンダー選択
-logout: Google アカウントとの連携を解除
-exit: Smart Schedule を退会させる(アカウント連携も自動的に削除されます)
-
-詳しい使い方はアカウント紹介ページを見てください'''
+                    reply_text = self.message_event_messages['group_help_message']
                 line_bot_api.reply_message(
                     event.reply_token,
                     TextSendMessage(text=reply_text)

@@ -1,8 +1,10 @@
 from linebot.models import JoinEvent, TextSendMessage
+from smart_schedule.settings import messages
 from . import line_bot_api
 
 
 class JoinEventHandler:
+    join_event_messages = messages['text_messages']['join_event']
 
     def __init__(self, handler):
         self.handler = handler
@@ -10,11 +12,8 @@ class JoinEventHandler:
         @self.handler.add(JoinEvent)
         def handle(event):
             print(event)
-            join_message = '''グループに招待ありがとうございます！
-グループでは「予定調整機能」「グループに登録されたカレンダーの予定確認」ができます。
-詳しい使い方はアカウント紹介ページを見てください。
-グループで使用できるコマンドを呼び出すメッセージは「help」と送信すると見ることができます。'''
+            message = self.join_event_messages['join_message']
             line_bot_api.reply_message(
                 event.reply_token,
-                TextSendMessage(text=join_message)
+                TextSendMessage(text=message)
             )
