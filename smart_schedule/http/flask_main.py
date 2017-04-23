@@ -10,7 +10,7 @@ from linebot.exceptions import (
 from smart_schedule.settings import (
     hash_env, google_env, Session
 )
-from smart_schedule.models import Personal
+from smart_schedule.models import Talk
 
 flow = client.OAuth2WebServerFlow(
     client_id=google_env['client_id'], client_secret=google_env['client_secret'],
@@ -79,11 +79,11 @@ class FlaskMain:
             auth_code = flask.request.args.get('code')
             credentials = flow.step2_exchange(auth_code)
             with session.begin():
-                if session.query(Personal).filter(
-                    Personal.user_id == talk_id
+                if session.query(Talk).filter(
+                    Talk.talk_id == talk_id
                 ).one_or_none() is None:
-                    session.add(Personal(
-                        user_id=talk_id, credential=credentials.to_json()
+                    session.add(Talk(
+                        talk_id=talk_id, credential=credentials.to_json()
                     ))
                     return 'あなたのLineとGoogleカレンダーが正常に紐付けられました。'
                 else:

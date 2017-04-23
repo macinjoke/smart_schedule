@@ -3,17 +3,17 @@ import httplib2
 from apiclient import discovery
 import datetime
 
-from smart_schedule.models import Personal
+from smart_schedule.models import Talk
 from smart_schedule.settings import Session, REFRESH_ERROR
 
 
 def get_credentials(talk_id):
     session = Session()
     with session.begin():
-        personal = session.query(Personal).filter_by(user_id=talk_id).one_or_none()
-        if personal is None:
+        talk = session.query(Talk).filter_by(talk_id=talk_id).one_or_none()
+        if talk is None:
             return None
-        credentials = client.OAuth2Credentials.from_json(personal.credential)
+        credentials = client.OAuth2Credentials.from_json(talk.credential)
         if credentials.access_token_expired:
             print('認証の期限が切れています')
             http = credentials.authorize(httplib2.Http())
@@ -21,11 +21,11 @@ def get_credentials(talk_id):
                 credentials.refresh(http)
             except client.HttpAccessTokenRefreshError:
                 print('リフレッシュエラーが起きました')
-                session.delete(personal)
+                session.delete(talk)
                 print('ユーザーをDBから削除しました')
                 return REFRESH_ERROR
             print('リフレッシュしました')
-            personal.credential = credentials.to_json()
+            talk.credential = credentials.to_json()
             print('新しい認証情報をDBに保存しました')
         return credentials
 
@@ -46,8 +46,8 @@ def remove_account(credentials, talk_id):
     # DBから削除
     session = Session()
     with session.begin():
-        personal = session.query(Personal).filter_by(user_id=talk_id).one()
-        session.delete(personal)
+        talk = session.query(Talk).filter_by(talk_id=talk_id).one()
+        session.delete(talk)
 
 
 # 現在からn日分のイベントを取得
