@@ -1,10 +1,6 @@
-from flask import Flask, request, abort
+from flask import request, abort
 import flask
-from flask_session import Session, SqlAlchemySessionInterface
-from flask_sqlalchemy import SQLAlchemy
-from oauth2client import client
-import os
-import uuid
+from oauth2client import client, clientsecrets
 import hashlib
 
 from linebot import WebhookHandler
@@ -12,15 +8,20 @@ from linebot.exceptions import (
     InvalidSignatureError
 )
 
-from smart_schedule.settings import line_env
-from smart_schedule.settings import hash_env
-from smart_schedule.settings import APP_ROOT
-from smart_schedule.settings import app
-from smart_schedule.settings import MySession
+from smart_schedule.settings import (
+    line_env, hash_env, google_env, app, MySession
+)
 from smart_schedule.line import event_handler
 from smart_schedule.models import Personal
 
 handler = WebhookHandler(line_env['channel_secret'])
+
+flow = client.OAuth2WebServerFlow(
+    client_id=google_env['client_id'], client_secret=google_env['client_secret'],
+    scope='https://www.googleapis.com/auth/calendar',
+    redirect_uri=google_env['redirect_uri'],
+    access_type='offline'
+)
 
 
 @app.route("/callback", methods=['POST'])
@@ -65,11 +66,6 @@ def oauth2():
     flask.session['talk_id'] = talk_id
     print('saved session')
     print(flask.session)
-
-    flow = client.flow_from_clientsecrets(
-        os.path.join(APP_ROOT, 'client_secret.json'),
-        scope='https://www.googleapis.com/auth/calendar',
-        redirect_uri=flask.url_for('oauth2callback', _external=True))
     auth_uri = flow.step1_get_authorize_url()
     return flask.redirect(auth_uri)
 
@@ -81,11 +77,6 @@ def oauth2callback():
     if 'talk_id' not in flask.session:
         return '不正なアクセスです。'
     talk_id = flask.session.pop('talk_id')
-    flow = client.flow_from_clientsecrets(
-        os.path.join(APP_ROOT, 'client_secret.json'),
-        scope='https://www.googleapis.com/auth/calendar',
-        redirect_uri=flask.url_for('oauth2callback', _external=True))
-    flow.params['access_type'] = 'offline'
     auth_code = flask.request.args.get('code')
     credentials = flow.step2_exchange(auth_code)
     with session.begin():
