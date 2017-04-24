@@ -341,12 +341,12 @@ class MessageEventHandler:
         in case of matching given filtering rules.
 
         :param text: the user message text rule as string or its list
-        :param type: the type of `linebot.models.sources` as string or its list
+        :param type: the type of `linebot.models.sources` as string or its list.
         :param pattern: the pattern matching user message text. 
-                        it is evaluated by `re.match` function
+                        it is evaluated by `re.match` function.
         :param pattern_flags: the pattern flags given as an argument 
                               of `re.match` function.
-        :param preexe: the boolean indicating whether pre-execute the function.
+        :param preexe: the boolean indicating whether function is pre-executed.
         """
         def wrapper(func):
             if preexe:
