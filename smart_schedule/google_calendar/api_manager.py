@@ -1,15 +1,14 @@
 from oauth2client import client
-import flask
 import httplib2
 from apiclient import discovery
 import datetime
 
 from smart_schedule.models import Personal
-from smart_schedule.settings import MySession, REFRESH_ERROR
+from smart_schedule.settings import Session, REFRESH_ERROR
 
 
 def get_credentials(talk_id):
-    session = MySession()
+    session = Session()
     with session.begin():
         personal = session.query(Personal).filter_by(user_id=talk_id).one_or_none()
         if personal is None:
@@ -45,7 +44,7 @@ def remove_account(credentials, talk_id):
         print('既にアカウント連携が削除されています')
 
     # DBから削除
-    session = MySession()
+    session = Session()
     with session.begin():
         personal = session.query(Personal).filter_by(user_id=talk_id).one()
         session.delete(personal)
@@ -55,10 +54,10 @@ def remove_account(credentials, talk_id):
 def get_n_days_events(service, calendar_id, n):
     now = datetime.datetime.utcnow()
     period = datetime.timedelta(days=n)
-    eventsResult = service.events().list(
+    events_result = service.events().list(
         calendarId=calendar_id, timeMin=now.isoformat() + 'Z', timeMax=(now + period).isoformat() + 'Z', maxResults=100, singleEvents=True,
         orderBy='startTime').execute()
-    events = eventsResult.get('items', [])
+    events = events_result.get('items', [])
     return events
 
 
@@ -66,21 +65,21 @@ def get_n_days_events(service, calendar_id, n):
 def get_events_after_n_days(service, calendar_id, n):
     now = datetime.datetime.utcnow()
     days = datetime.timedelta(days=n)
-    eventsResult = service.events().list(
+    events_result = service.events().list(
         calendarId=calendar_id, timeMin=(now + days).isoformat() + 'Z',
         timeMax=(now + days + datetime.timedelta(days=1)).isoformat() + 'Z',
         maxResults=100, singleEvents=True, orderBy='startTime').execute()
-    events = eventsResult.get('items', [])
+    events = events_result.get('items', [])
     return events
 
 
 # タイトル名で検索
 def get_events_by_title(service, calendar_id, search_word):
     now = datetime.datetime.utcnow()
-    eventsResult = service.events().list(
+    events_result = service.events().list(
         calendarId=calendar_id, timeMin=now.isoformat() + 'Z', maxResults=100,
         singleEvents=True, orderBy='startTime').execute()
-    events = eventsResult.get('items', [])
+    events = events_result.get('items', [])
     events = list(filter(lambda event: search_word in event['summary'], events))
 
     return events
