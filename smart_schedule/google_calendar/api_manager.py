@@ -1,7 +1,8 @@
 from oauth2client import client
 import httplib2
 from apiclient import discovery
-import datetime
+from datetime import datetime, timedelta, timezone
+import pytz
 
 from smart_schedule.models import Talk
 from smart_schedule.settings import Session, REFRESH_ERROR
@@ -52,22 +53,25 @@ def remove_account(credentials, talk_id):
 
 # 現在からn日分のイベントを取得
 def get_n_days_events(service, calendar_id, n):
-    now = datetime.datetime.utcnow()
-    period = datetime.timedelta(days=n)
+    now = datetime.now(timezone.utc)
+    period = timedelta(days=n)
     events_result = service.events().list(
-        calendarId=calendar_id, timeMin=now.isoformat() + 'Z', timeMax=(now + period).isoformat() + 'Z', maxResults=100, singleEvents=True,
+        calendarId=calendar_id, timeMin=now.isoformat(),
+        timeMax=(now + period).isoformat(), maxResults=100, singleEvents=True,
         orderBy='startTime').execute()
     events = events_result.get('items', [])
     return events
 
 
-# n日後のイベントを取得
-def get_events_after_n_days(service, calendar_id, n):
-    now = datetime.datetime.utcnow()
-    days = datetime.timedelta(days=n)
+# 日付指定でイベントを取得
+def get_events_by_date(service, calendar_id, date):
+    # 何故かminute=19で調整しないと帳尻が合わなくなる（終日予定が複数の指定日にまたがってでマッチしてしまうなど)
+    # Asia/Tokyoのタイムオフセットが09:19であることに起因すると思われる。
+    dt = datetime(date.year, date.month, date.day, minute=19,
+                  tzinfo=pytz.timezone('Asia/Tokyo'))
     events_result = service.events().list(
-        calendarId=calendar_id, timeMin=(now + days).isoformat() + 'Z',
-        timeMax=(now + days + datetime.timedelta(days=1)).isoformat() + 'Z',
+        calendarId=calendar_id, timeMin=dt.isoformat(),
+        timeMax=(dt + timedelta(days=1)).isoformat(),
         maxResults=100, singleEvents=True, orderBy='startTime').execute()
     events = events_result.get('items', [])
     return events
@@ -75,9 +79,9 @@ def get_events_after_n_days(service, calendar_id, n):
 
 # タイトル名で検索
 def get_events_by_title(service, calendar_id, search_word):
-    now = datetime.datetime.utcnow()
+    now = datetime.now(timezone.utc)
     events_result = service.events().list(
-        calendarId=calendar_id, timeMin=now.isoformat() + 'Z', maxResults=100,
+        calendarId=calendar_id, timeMin=now.isoformat(), maxResults=100,
         singleEvents=True, orderBy='startTime').execute()
     events = events_result.get('items', [])
     events = list(filter(lambda event: search_word in event['summary'], events))
