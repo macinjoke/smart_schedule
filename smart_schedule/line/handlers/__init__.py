@@ -58,15 +58,22 @@ def reply_invalid_credential_error_message(event):
 
 
 def generate_message_from_events(events, reply_text):
+    day_of_week_strs = ["月", "火", "水", "木", "金", "土", "日"]
     for e in events:
         summary = e['summary']
         start = e['start'].get('dateTime', e['start'].get('date'))
         if re.match('\d+[-]\d+[-]\d+[T]\d+[:]\d+[:]\d+[+]\d+[:]\d+', start):
             start_datetime = datetime.strptime(start, '%Y-%m-%dT%H:%M:%S+09:00')
-            start = start_datetime.strftime('%Y年%m月%d日 %H時%S分')
+            day_of_week = day_of_week_strs[start_datetime.weekday()]
+            start = start_datetime.strftime(
+                '%Y年%m月%d日({}) %H時%S分'.format(day_of_week)
+            )
             end = e['end'].get('dateTime', e['end'].get('date'))
             end_datetime = datetime.strptime(end, '%Y-%m-%dT%H:%M:%S+09:00')
-            end = end_datetime.strftime('%Y年%m月%d日 %H時%S分')
+            day_of_week = day_of_week_strs[end_datetime.weekday()]
+            end = end_datetime.strftime(
+                '%Y年%m月%d日({}) %H時%S分'.format(day_of_week)
+            )
             reply_text += '\n\n{}\n{}\n               |\n{}\n\n---------------------------'.format(summary,
                                                                                                    start,
                                                                                                    end)
