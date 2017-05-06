@@ -89,6 +89,18 @@ def get_events_by_title(service, calendar_id, search_word):
     return events
 
 
+# n日後のイベントを取得
+def get_events_after_n_days(service, calendar_id, n):
+    now = datetime.utcnow()
+    days = timedelta(days=n)
+    events_result = service.events().list(
+        calendarId=calendar_id, timeMin=(now + days).isoformat() + 'Z',
+        timeMax=(now + days + timedelta(days=1)).isoformat() + 'Z',
+        maxResults=100, singleEvents=True, orderBy='startTime').execute()
+    events = events_result.get('items', [])
+    return events
+
+
 # イベントを作成
 def create_event(service, calendar_id, date, title):
     event_data = {
