@@ -184,6 +184,9 @@ class MessageEventHandler:
                 if v == best_date_count
             ]
             print(len(reply_text))
+            if len(reply_text) >= 100:
+                reply_text = reply_text[:100]
+
             buttons_template_message = TemplateSendMessage(
                 alt_text='Button template',
                 # TODO ボタンテンプレートが4つしか受け付けないので4つしか選べない
