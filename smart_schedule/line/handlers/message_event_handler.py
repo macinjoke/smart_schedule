@@ -266,6 +266,8 @@ class MessageEventHandler:
                 return
             reply_text = '{}の検索結果'.format(keyword)
             reply_text = generate_message_from_events(events, reply_text)
+            if len(reply_text) >= 1900:
+                reply_text = reply_text[:1900]
 
             line_bot_api.reply_message(
                 event.reply_token,
