@@ -1,4 +1,4 @@
-# smart_schedule
+# Smart Schedule
 Google Calendar の予定確認や日程調整ができるLINE Bot
 ![model](https://raw.githubusercontent.com/wiki/tonkatu05/smart_schedule/images/model.jpg)
 
