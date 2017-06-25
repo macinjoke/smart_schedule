@@ -184,6 +184,9 @@ class MessageEventHandler:
                 if v == best_date_count
             ]
             print(len(reply_text))
+            if len(reply_text) >= 100:
+                reply_text = reply_text[:100]
+
             buttons_template_message = TemplateSendMessage(
                 alt_text='Button template',
                 # TODO ボタンテンプレートが4つしか受け付けないので4つしか選べない
@@ -201,29 +204,6 @@ class MessageEventHandler:
             with self.session.begin():
                 for free_day in talk.free_days:
                     self.session.delete(free_day)
-
-        @self._add_flag_case(flag='day_flag')
-        def day(event, service, talk):
-            talk.day_flag = False
-            try:
-                days = int(event.message.text)
-            except ValueError:
-                # TODO 数字ではないメッセージが送られてきたときのメッセージを送る
-                return
-            try:
-                events = api_manager.get_events_after_n_days(
-                    service,  talk.calendar_id, days
-                )
-            except client.HttpAccessTokenRefreshError:
-                self.session.delete(talk)
-                reply_invalid_credential_error_message(event)
-                return
-            reply_text = '{}日後の予定'.format(days)
-            reply_text = generate_message_from_events(events, reply_text)
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=reply_text)
-            )
 
         @self._add_flag_case(flag='up_to_day_flag')
         def up_to_day(event, service, talk):
@@ -248,6 +228,30 @@ class MessageEventHandler:
                 TextSendMessage(text=reply_text)
             )
 
+        @self._add_flag_case(flag='date_flag')
+        def day_by_date(event, service, talk):
+            talk.date_flag = False
+            try:
+                split = event.message.text.split('/')
+                specified_date = date(2017, int(split[0]), int(split[1]))
+            except ValueError:
+                # TODO 不適当なメッセージが送られてきたときのメッセージを送る
+                return
+            try:
+                events = api_manager.get_events_by_date(
+                    service,  talk.calendar_id, specified_date
+                )
+            except client.HttpAccessTokenRefreshError:
+                self.session.delete(talk)
+                reply_invalid_credential_error_message(event)
+                return
+            reply_text = '{} の予定'.format(event.message.text)
+            reply_text = generate_message_from_events(events, reply_text)
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=reply_text)
+            )
+
         @self._add_flag_case(flag='keyword_flag')
         def keyword(event, service, talk):
             talk.keyword_flag = False
@@ -262,6 +266,8 @@ class MessageEventHandler:
                 return
             reply_text = '{}の検索結果'.format(keyword)
             reply_text = generate_message_from_events(events, reply_text)
+            if len(reply_text) >= 1900:
+                reply_text = reply_text[:1900]
 
             line_bot_api.reply_message(
                 event.reply_token,

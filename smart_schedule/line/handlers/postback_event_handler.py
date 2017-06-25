@@ -144,17 +144,6 @@ class PostBackEventHandler:
                 TextSendMessage(text="キーワードを入力してください\n例：バイト、研究室")
             )
 
-        @self._add_case(template_id='#after n days_schedule')
-        def after_n_days_schedule(event, data, credentials, service):
-            talk_id = self._get_talk_id(event)
-            with self.session.begin():
-                talk = self.session.query(Talk).filter_by(talk_id=talk_id).one()
-                talk.day_flag = True
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text="何日後の予定を表示しますか？\n例：5")
-            )
-
         @self._add_case(template_id='#up to n days_schedule')
         def up_to_n_days_schedule(event, data, credentials, service):
             talk_id = self._get_talk_id(event)
@@ -164,6 +153,17 @@ class PostBackEventHandler:
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="何日後までの予定を表示しますか？\n例：5")
+            )
+
+        @self._add_case(template_id='#date_schedule')
+        def date_schedule(event, data, credentials, service):
+            talk_id = self._get_talk_id(event)
+            with self.session.begin():
+                talk = self.session.query(Talk).filter_by(talk_id=talk_id).one()
+                talk.date_flag = True
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="取得したい予定の日付を入力してください\n例：4/1")
             )
 
         @self._add_case(template_id='#today_schedule')

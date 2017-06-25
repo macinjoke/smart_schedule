@@ -18,6 +18,7 @@ class Talk(db.Model):
     calendar_id = Column(Unicode(200))
     up_to_day_flag = Column(Boolean)
     day_flag = Column(Boolean)
+    date_flag = Column(Boolean)
     keyword_flag = Column(Boolean)
     calendar_select_flag = Column(Boolean)
     free_days = relationship("FreeDay")
@@ -29,6 +30,7 @@ class Talk(db.Model):
         self.calendar_id = 'primary'
         self.up_to_day_flag = False
         self.day_flag = False
+        self.date_flag = False
         self.keyword_flag = False
         self.calendar_select_flag = False
 

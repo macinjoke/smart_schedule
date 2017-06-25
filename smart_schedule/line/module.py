@@ -56,8 +56,8 @@ def post_carousel(reply_token):
                                         },
                                         {
                                             "type": "postback",
-                                            "label": "n日後の予定を表示",
-                                            "data": "#after n days_schedule,{}".format(time)
+                                            "label": "日付指定で予定を取得",
+                                            "data": "#date_schedule,{}".format(time)
                                         },
                                         {
                                             "type": "postback",
