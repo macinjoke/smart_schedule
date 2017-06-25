@@ -1,53 +1,36 @@
-# -*- coding: utf-8 -*-
-
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Column, Integer, Unicode, ForeignKey, Boolean, Date
+from sqlalchemy import (
+    Column, Integer, Unicode, ForeignKey, Boolean, Date, UniqueConstraint
+)
 from sqlalchemy.orm import relationship
 
 db = SQLAlchemy()
 
 
-class Personal(db.Model):
+class Talk(db.Model):
     """
-    個人情報格納のモデル
+    ユーザーや、グループ、トークルームを表す
     """
-    __tablename__ = "personal_info"
+    __tablename__ = "talk"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Unicode(255))
+    talk_id = Column(Unicode(255), unique=True)
     credential = Column(Unicode(1200))
     calendar_id = Column(Unicode(200))
     up_to_day_flag = Column(Boolean)
     day_flag = Column(Boolean)
     keyword_flag = Column(Boolean)
-    adjust_flag = Column(Boolean)
     calendar_select_flag = Column(Boolean)
-    users = relationship("GroupUser")
+    free_days = relationship("FreeDay")
 
     # 生成された時に呼び出される
-    def __init__(self, user_id, credential):
-        self.user_id = user_id
+    def __init__(self, talk_id, credential):
+        self.talk_id = talk_id
         self.credential = credential
         self.calendar_id = 'primary'
         self.up_to_day_flag = False
         self.day_flag = False
         self.keyword_flag = False
-        self.adjust_flag = False
         self.calendar_select_flag = False
-
-
-class GroupUser(db.Model):
-    """
-    グループトーク内のユーザー
-    """
-    __tablename__ = "group_user"
-    id = Column(Integer, primary_key=True)
-    name = Column(Unicode(20))
-    group_id = Column(Integer, ForeignKey('personal_info.id'))
-    free_days = relationship("FreeDay")
-
-    def __init__(self, name, group_id):
-        self.name = name
-        self.group_id = group_id
 
 
 class FreeDay(db.Model):
@@ -55,10 +38,18 @@ class FreeDay(db.Model):
     日程調整機能における空いている日
     """
     __tablename__ = "free_day"
+    __table_args__ = (
+        UniqueConstraint(
+            'date', 'user_name', 'talk_id',
+            name='_date_user_name_talk_id_uc'
+        ),
+    )
     id = Column(Integer, primary_key=True)
     date = Column(Date)
-    user_id = Column(Integer, ForeignKey('group_user.id'))
+    user_name = Column(Unicode(255))
+    talk_id = Column(Integer, ForeignKey('talk.id'))
 
-    def __init__(self, date, user_id):
+    def __init__(self, date, user_name, talk_id):
         self.date = date
-        self.user_id = user_id
+        self.user_name = user_name
+        self.talk_id = talk_id

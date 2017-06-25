@@ -14,14 +14,10 @@ class GroupMenuButtons(ButtonsTemplate):
             ),
             PostbackTemplateAction(
                 label=messages['actions'][1]['label'],
-                data='{}_#register,{}'.format(self.id, time)
-            ),
-            PostbackTemplateAction(
-                label=messages['actions'][2]['label'],
                 data='{}_#member,{}'.format(self.id, time)
             ),
             PostbackTemplateAction(
-                label=messages['actions'][3]['label'],
+                label=messages['actions'][2]['label'],
                 data='{}_#g-calender,{}'.format(self.id, time)
             )
         ]
