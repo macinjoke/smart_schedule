@@ -60,8 +60,8 @@ class MessageEventHandler:
                 TextSendMessage(text=reply_text)
             )
 
-        @self._add_case(text='#menu')
-        def menu(event, service):
+        @self._add_case(text=['schedule', '予定'])
+        def schedule(event, service):
             post_carousel(event.reply_token)
 
         @self._add_case(

@@ -62,6 +62,7 @@ text_messages:
       help: ヘルプを表示
       select: カレンダー選択
       logout: Google アカウントとの連携を解除
+      schedule, 予定: 予定確認メニューを表示
 
       詳しい使い方はアカウント紹介ページを見てください
     group_help_message: |
@@ -71,6 +72,7 @@ text_messages:
       ss: グループメニューの表示
       select: カレンダー選択
       logout: Google アカウントとの連携を解除
+      schedule, 予定: 予定確認メニューを表示
       exit: Smart Schedule を退会させる(アカウント連携も自動的に削除されます)
 
       詳しい使い方はアカウント紹介ページを見てください
