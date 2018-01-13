@@ -1,6 +1,6 @@
-from oauth2client import client
 from datetime import datetime, date
 from collections import OrderedDict, Counter
+from oauth2client import client
 from linebot.exceptions import (
     LineBotApiError
 )
@@ -14,6 +14,7 @@ from smart_schedule.settings import (
 )
 from smart_schedule.google_calendar import api_manager
 from smart_schedule.models import Talk
+from smart_schedule.utils.date_util import jst, is_over_now
 
 from . import (
     line_bot_api, reply_google_auth_message, reply_refresh_error_message,
@@ -72,8 +73,12 @@ class PostBackEventHandler:
         def calendar_create(event, data, credentials, service):
             talk_id = self._get_talk_id(event)
             created_datetime = datetime.strptime(data[1], '%m/%d')
-            # TODO 2017
-            created_date = date(2017, created_datetime.month, created_datetime.day)
+            current_year = datetime.now(jst).year
+            created_date = date(
+                current_year if is_over_now(created_datetime)
+                else current_year + 1,
+                created_datetime.month, created_datetime.day
+            )
             title = 'Smart Scheduleからの予定'
             with self.session.begin():
                 talk = self.session.query(Talk).filter_by(talk_id=talk_id).one()

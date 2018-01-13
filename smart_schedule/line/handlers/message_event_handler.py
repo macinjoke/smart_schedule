@@ -15,6 +15,7 @@ from smart_schedule.settings import (
 )
 from smart_schedule.google_calendar import api_manager
 from smart_schedule.models import Talk, FreeDay
+from smart_schedule.utils.date_util import jst, is_over_now
 
 from . import (
     line_bot_api, reply_google_auth_message, reply_refresh_error_message,
@@ -136,12 +137,13 @@ class MessageEventHandler:
             datetimes = [
                 datetime.strptime(day_str, '%m/%d') for day_str in day_strs
             ]
-            # TODO 2017 にしちゃってるけどどうにかしないと1年後使えねえや笑
             # TODO 無効な日にち（31を指定したが、その月の31日が存在しない場合など)のエラーハンドリングやメッセージを実装する(ValueError)
+            current_year = datetime.now(jst).year
             dates = [
                 date(
-                    2017, datetime.month, datetime.day
-                ) for datetime in datetimes
+                    current_year if is_over_now(dt) else current_year + 1,
+                    dt.month, dt.day
+                ) for dt in datetimes
             ]
             free_days = [FreeDay(date, name, talk.id) for date in dates]
             with self.session.begin():
@@ -232,8 +234,12 @@ class MessageEventHandler:
         def day_by_date(event, service, talk):
             talk.date_flag = False
             try:
-                split = event.message.text.split('/')
-                specified_date = date(2017, int(split[0]), int(split[1]))
+                current_year = datetime.now(jst).year
+                dt = datetime.strptime(event.message.text, '%m/%d')
+                specified_date = date(
+                    current_year if is_over_now(dt) else current_year + 1,
+                    dt.month, dt.day
+                )
             except ValueError:
                 # TODO 不適当なメッセージが送られてきたときのメッセージを送る
                 return
